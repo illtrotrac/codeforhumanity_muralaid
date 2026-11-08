@@ -1,4 +1,11 @@
-import type { Mural, MuralSummary, MuralTile, Need, Organisation } from "@/lib/types";
+import type {
+  Mural,
+  MuralSummary,
+  MuralTile,
+  Need,
+  Organisation,
+  PledgeActivity,
+} from "@/lib/types";
 import { getDb } from "./db";
 import { reseedMural } from "./seed";
 import { transaction } from "./transaction";
@@ -66,6 +73,12 @@ function toTile(row: TileRow, gridCols: number): MuralTile {
   };
 }
 
+// SQLite's datetime('now') gives "2026-11-08 10:15:00" in UTC, with no zone
+// marker. Turn it into a proper ISO timestamp so browsers read it as UTC.
+function toIsoUtc(sqliteTime: string): string {
+  return `${sqliteTime.replace(" ", "T")}Z`;
+}
+
 function findMural(slug: string) {
   // "?" placeholders: SQLite inserts the value safely, so a slug like
   // "x'; DROP TABLE murals; --" is just a string that matches nothing.
@@ -129,13 +142,42 @@ export function getMural(slug: string): Mural | null {
   };
 }
 
+// The newest pledges on a mural, for the "recent kindness" ticker.
+export function recentPledges(slug: string, limit = 5): PledgeActivity[] {
+  const rows = getDb()
+    .prepare(
+      `SELECT p.tile_number, p.amount, p.created_at, t.need_title
+         FROM pledges p
+         JOIN murals m ON m.id = p.mural_id
+         JOIN tiles t  ON t.mural_id = p.mural_id AND t.tile_number = p.tile_number
+        WHERE m.slug = ?
+        ORDER BY p.id DESC
+        LIMIT ?`,
+    )
+    .all(slug, limit) as Array<{
+    tile_number: number;
+    amount: number;
+    created_at: string;
+    need_title: string;
+  }>;
+
+  return rows.map((r) => ({
+    tileId: r.tile_number,
+    title: r.need_title,
+    amount: r.amount,
+    at: toIsoUtc(r.created_at),
+  }));
+}
+
 // ---------- Writes ----------
 
 // Writes return a result object instead of throwing for expected problems,
 // so the API route can turn each one into the right HTTP status.
 type WriteFailure = { ok: false; reason: "not_found" | "already_funded" };
 
-export type PledgeResult = { ok: true; tile: MuralTile; completed: boolean } | WriteFailure;
+export type PledgeResult =
+  | { ok: true; tile: MuralTile; completed: boolean; pledge: PledgeActivity }
+  | WriteFailure;
 
 export function pledgeTile(slug: string, tileNumber: number): PledgeResult {
   const db = getDb();
@@ -160,17 +202,28 @@ export function pledgeTile(slug: string, tileNumber: number): PledgeResult {
     }
 
     const tile = findTile(mural.id, tileNumber)!;
-    db.prepare("INSERT INTO pledges (mural_id, tile_number, amount) VALUES (?, ?, ?)").run(
-      mural.id,
-      tileNumber,
-      tile.need_amount,
-    );
+    // RETURNING hands back the row we just inserted, including its timestamp.
+    const { created_at } = db
+      .prepare(
+        "INSERT INTO pledges (mural_id, tile_number, amount) VALUES (?, ?, ?) RETURNING created_at",
+      )
+      .get(mural.id, tileNumber, tile.need_amount) as { created_at: string };
 
     const { locked } = db
       .prepare("SELECT COUNT(*) AS locked FROM tiles WHERE mural_id = ? AND status = 'locked'")
       .get(mural.id) as { locked: number };
 
-    return { ok: true, tile: toTile(tile, mural.grid_cols), completed: locked === 0 };
+    return {
+      ok: true,
+      tile: toTile(tile, mural.grid_cols),
+      completed: locked === 0,
+      pledge: {
+        tileId: tileNumber,
+        title: tile.need_title,
+        amount: tile.need_amount,
+        at: toIsoUtc(created_at),
+      },
+    };
   });
 }
 

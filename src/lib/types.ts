@@ -55,3 +55,17 @@ export type MuralSummary = {
 };
 
 export type DemoAction = "reset" | "skip-to-finale";
+
+// One line in the "recent kindness" ticker.
+export type PledgeActivity = {
+  tileId: number;
+  title: string;
+  amount: number;
+  at: string; // ISO timestamp, UTC
+};
+
+// Live events the server pushes to every browser watching a mural.
+export type MuralEvent =
+  | { type: "tile-restored"; slug: string; tile: MuralTile; completed: boolean; pledge: PledgeActivity }
+  | { type: "tile-updated"; slug: string; tile: MuralTile } // an admin edited a need
+  | { type: "mural-replaced"; slug: string; tiles: MuralTile[] }; // demo reset or skip

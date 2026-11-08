@@ -3,24 +3,45 @@
 import { useState, type ReactNode } from "react";
 import { MuralMagic, TAP_MS } from "@/components/magic/MuralMagic";
 import { playChime } from "@/lib/chime";
-import type { Mural as MuralData } from "@/lib/types";
+import type { Mural as MuralData, PledgeActivity } from "@/lib/types";
+import { KindnessTicker } from "./KindnessTicker";
 import { Mural } from "./Mural";
 import { NeedPanel } from "./NeedPanel";
 import { useMuralState } from "./useMuralState";
 
+const TICKER_LENGTH = 5;
+
 type MuralExperienceProps = {
   mural: MuralData; // loaded from the database by the page, on the server
+  recentPledges: PledgeActivity[]; // newest first
   children: ReactNode; // the static intro, rendered on the server
 };
 
-// The interactive part of a mural page. Tile data and saving live in
-// useMuralState; this component keeps UI state (which panel is open,
-// whether the celebration is playing).
-export function MuralExperience({ mural: initialMural, children }: MuralExperienceProps) {
-  const { mural, tiles, error, pledge, runDemo } = useMuralState(initialMural);
+// The interactive part of a mural page. Tile data, saving and the live
+// stream live in useMuralState; this component keeps UI state (which panel
+// is open, whether the celebration is playing, the ticker).
+export function MuralExperience({
+  mural: initialMural,
+  recentPledges,
+  children,
+}: MuralExperienceProps) {
   const [selectedId, setSelectedId] = useState<number | null>(null);
   const [justRestoredId, setJustRestoredId] = useState<number | null>(null);
   const [isCelebrating, setIsCelebrating] = useState(false);
+  const [pledges, setPledges] = useState(recentPledges);
+
+  const { mural, tiles, error, isLive, pledge, runDemo } = useMuralState(initialMural, {
+    onPledge: (p) => {
+      // Newest first; drop a duplicate if the same pledge arrives twice.
+      setPledges((prev) =>
+        [p, ...prev.filter((x) => !(x.tileId === p.tileId && x.at === p.at))].slice(0, TICKER_LENGTH),
+      );
+      setJustRestoredId(p.tileId); // someone else's tile blooms too
+    },
+    // Someone else finished the wall while we watched: celebrate here too.
+    // (No chime: browsers only allow sound right after the viewer clicks.)
+    onRemoteComplete: () => setIsCelebrating(true),
+  });
 
   // Derived values: worked out from state on every render, never stored.
   const selectedTile = tiles.find((t) => t.id === selectedId) ?? null;
@@ -64,12 +85,18 @@ export function MuralExperience({ mural: initialMural, children }: MuralExperien
         {children}
 
         <div className="flex flex-col gap-2">
-          <p>
-            <span className="font-display text-title text-ink-strong tabular-nums">
-              {restored}
-            </span>{" "}
-            <span className="text-ink-muted">of {total} tiles restored</span>
-          </p>
+          <div className="flex flex-wrap items-baseline justify-between gap-x-6 gap-y-1">
+            <p>
+              <span className="font-display text-title text-ink-strong tabular-nums">
+                {restored}
+              </span>{" "}
+              <span className="text-ink-muted">of {total} tiles restored</span>
+            </p>
+            <p className="flex items-center gap-2 font-mono text-label uppercase text-ink-muted">
+              <span aria-hidden="true" className="live-dot" data-live={isLive || undefined} />
+              {isLive ? "Live" : "Reconnecting…"}
+            </p>
+          </div>
           <div
             role="progressbar"
             aria-label="Mural progress"
@@ -88,6 +115,8 @@ export function MuralExperience({ mural: initialMural, children }: MuralExperien
         {isComplete && (
           <p className="font-display text-title text-accent">The wall is whole again.</p>
         )}
+
+        <KindnessTicker pledges={pledges} />
 
         {error && (
           <p role="alert" className="rounded-panel bg-surface-raised p-4 text-sm text-danger">

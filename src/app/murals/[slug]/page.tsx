@@ -3,7 +3,7 @@ import { connection } from "next/server";
 import { Suspense } from "react";
 import { MuralExperience } from "@/components/mural/MuralExperience";
 import { VerifiedBadge } from "@/components/murals/VerifiedBadge";
-import { getMural } from "@/server/murals";
+import { getMural, recentPledges } from "@/server/murals";
 
 // /murals/the-long-table, /murals/the-urban-harvest, ...
 export default function MuralPage({ params }: PageProps<"/murals/[slug]">) {
@@ -24,7 +24,7 @@ async function MuralLoader({ params }: { params: Promise<{ slug: string }> }) {
   if (!mural) notFound(); // shows Next's 404 page
 
   return (
-    <MuralExperience mural={mural}>
+    <MuralExperience mural={mural} recentPledges={recentPledges(slug)}>
       <p className="font-mono text-label uppercase text-ink-muted">
         {mural.organisation.sector} · {mural.location}
       </p>

@@ -1,18 +1,96 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { muralApi } from "@/lib/mural-api";
 import type { NeedErrors } from "@/lib/need-validation";
-import type { DemoAction, Mural, Need, TileStatus } from "@/lib/types";
+import type {
+  DemoAction,
+  Mural,
+  MuralEvent,
+  MuralTile,
+  Need,
+  PledgeActivity,
+  TileStatus,
+} from "@/lib/types";
 
 export type SaveNeedResult = { ok: true } | { ok: false; message: string; errors?: NeedErrors };
 
-// One mural's tiles in the browser, kept in step with the server.
-// The page loads the mural on the server and passes it in as the start.
-export function useMuralState(initial: Mural) {
+// Optional reactions to things other people do, while this page is open.
+export type LiveHandlers = {
+  onPledge?: (pledge: PledgeActivity) => void; // any pledge, including our own
+  onRemoteComplete?: () => void; // someone ELSE funded the last tile
+};
+
+function replaceTile(tiles: MuralTile[], next: MuralTile) {
+  return tiles.map((t) => (t.id === next.id ? next : t));
+}
+
+// One mural's tiles in the browser, kept in step with the server: our own
+// changes go out over the API, everyone else's arrive over the live stream.
+export function useMuralState(initial: Mural, live: LiveHandlers = {}) {
   const [tiles, setTiles] = useState(initial.tiles);
   const [error, setError] = useState<string | null>(null);
+  const [isLive, setIsLive] = useState(false);
   const { slug } = initial;
+
+  // The stream's listeners are created once, so they read the latest tiles
+  // and handlers through refs instead of capturing stale copies.
+  const tilesRef = useRef(tiles);
+  const liveRef = useRef(live);
+  useEffect(() => {
+    tilesRef.current = tiles;
+    liveRef.current = live;
+  });
+
+  useEffect(() => {
+    const source = new EventSource(`/api/murals/${encodeURIComponent(slug)}/events`);
+    let droppedConnection = false;
+
+    function read(event: Event) {
+      return JSON.parse((event as MessageEvent<string>).data) as MuralEvent;
+    }
+
+    source.addEventListener("tile-restored", (event) => {
+      const data = read(event);
+      if (data.type !== "tile-restored") return;
+      // If the tile was already in colour here, this is our own optimistic
+      // pledge coming back, so it doesn't count as someone else finishing.
+      const wasLocked = tilesRef.current.find((t) => t.id === data.tile.id)?.status === "locked";
+      setTiles((prev) => replaceTile(prev, data.tile));
+      liveRef.current.onPledge?.(data.pledge);
+      if (wasLocked && data.completed) liveRef.current.onRemoteComplete?.();
+    });
+
+    source.addEventListener("tile-updated", (event) => {
+      const data = read(event);
+      if (data.type === "tile-updated") setTiles((prev) => replaceTile(prev, data.tile));
+    });
+
+    source.addEventListener("mural-replaced", (event) => {
+      const data = read(event);
+      if (data.type === "mural-replaced") setTiles(data.tiles);
+    });
+
+    source.onopen = () => {
+      setIsLive(true);
+      // Anything could have changed while we were disconnected, and those
+      // events are gone. Catch up by fetching the whole mural once.
+      if (droppedConnection) {
+        droppedConnection = false;
+        void muralApi.get(slug).then((result) => {
+          if (result.ok) setTiles(result.data.tiles);
+        });
+      }
+    };
+
+    // EventSource reconnects by itself; we just show that we're offline.
+    source.onerror = () => {
+      droppedConnection = true;
+      setIsLive(false);
+    };
+
+    return () => source.close(); // leaving the page closes the stream
+  }, [slug]);
 
   function setStatus(id: number, status: TileStatus) {
     setTiles((prev) => prev.map((t) => (t.id === id ? { ...t, status } : t)));
@@ -33,7 +111,7 @@ export function useMuralState(initial: Mural) {
   async function saveNeed(id: number, need: Need): Promise<SaveNeedResult> {
     const result = await muralApi.saveNeed(slug, id, need);
     if (!result.ok) return { ok: false, message: result.error, errors: result.errors };
-    setTiles((prev) => prev.map((t) => (t.id === id ? result.data.tile : t)));
+    setTiles((prev) => replaceTile(prev, result.data.tile));
     return { ok: true };
   }
 
@@ -44,5 +122,5 @@ export function useMuralState(initial: Mural) {
     else setError(result.error);
   }
 
-  return { mural: initial, tiles, error, pledge, saveNeed, runDemo };
+  return { mural: initial, tiles, error, isLive, pledge, saveNeed, runDemo };
 }

@@ -1,3 +1,4 @@
+import { publish } from "@/server/events";
 import { jsonError, parseTileNumber } from "@/server/http";
 import { pledgeTile } from "@/server/murals";
 
@@ -16,5 +17,9 @@ export async function POST(
       ? jsonError("That mural or tile doesn't exist.", 404)
       : jsonError("Someone already funded this tile.", 409); // 409 Conflict
   }
-  return Response.json({ tile: result.tile, completed: result.completed });
+
+  // Tell every open browser, only AFTER the database has committed.
+  const { tile: restored, completed, pledge } = result;
+  publish({ type: "tile-restored", slug, tile: restored, completed, pledge });
+  return Response.json({ tile: restored, completed });
 }

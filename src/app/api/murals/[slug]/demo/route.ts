@@ -1,4 +1,5 @@
 import type { DemoAction } from "@/lib/types";
+import { publish } from "@/server/events";
 import { jsonError, readJson } from "@/server/http";
 import { resetMural, skipToFinale } from "@/server/murals";
 
@@ -20,5 +21,6 @@ export async function POST(request: Request, ctx: RouteContext<"/api/murals/[slu
 
   const mural = ACTIONS[action as DemoAction](slug);
   if (!mural) return jsonError("That mural doesn't exist.", 404);
+  publish({ type: "mural-replaced", slug, tiles: mural.tiles });
   return Response.json(mural);
 }

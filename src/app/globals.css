@@ -277,6 +277,34 @@ body {
   }
 }
 
+/* ---------- Live updates ---------- */
+@layer components {
+  /* Grey while reconnecting; a softly pulsing accent dot when live */
+  .live-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--ink-muted);
+  }
+  .live-dot[data-live] {
+    background: var(--accent);
+    animation: live-pulse 2s var(--ease-out-soft) infinite;
+  }
+  /* New ticker lines slide in */
+  .kindness-item {
+    animation: kindness-in var(--duration-slow) var(--ease-out-soft);
+  }
+}
+
+@keyframes live-pulse {
+  0% { box-shadow: 0 0 0 0 rgb(232 85 61 / 0.6); }
+  70%, 100% { box-shadow: 0 0 0 8px rgb(232 85 61 / 0); }
+}
+@keyframes kindness-in {
+  from { opacity: 0; transform: translateY(-6px); }
+  to { opacity: 1; transform: none; }
+}
+
 /* ---------- Celebration (MuralMagic.tsx sets --magic-tap, --wand-duration, --magic-spill) ---------- */
 @layer components {
   .mural-grid {

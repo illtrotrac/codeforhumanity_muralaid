@@ -29,6 +29,8 @@ const base = (slug: string) => `/api/murals/${encodeURIComponent(slug)}`;
 const json = { "Content-Type": "application/json" };
 
 export const muralApi = {
+  get: (slug: string) => request<Mural>(base(slug), { cache: "no-store" }),
+
   pledge: (slug: string, tileId: number) =>
     request<{ tile: MuralTile; completed: boolean }>(`${base(slug)}/tiles/${tileId}/pledge`, {
       method: "POST",
