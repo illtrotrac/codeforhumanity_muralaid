@@ -1,26 +1,165 @@
 @import "tailwindcss";
 
+/*
+ * MuralAid design tokens, in three layers:
+ *
+ *   1. Primitives  - raw values (hex codes, sizes). Named for WHAT they are.
+ *   2. Semantic    - roles in the UI (canvas, ink, accent). Named for WHAT THEY DO.
+ *   3. Component   - settings for one component (tile, button, panel).
+ *
+ * Rule: components only use layers 2 and 3. If we ever change the palette,
+ * we edit layer 1 and the whole app follows.
+ */
+
+/* ---------- Layer 1: primitives ---------- */
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  /* Charcoal: warm near-blacks, from deepest to lightest */
+  --charcoal-950: #0e0d0c;
+  --charcoal-900: #151311;
+  --charcoal-800: #211e1b;
+  --charcoal-700: #2e2a26;
+  --charcoal-600: #3d3833;
+  --charcoal-400: #9b938a;
+
+  /* Paper: warm off-whites */
+  --paper-100: #ede8e0;
+  --paper-50: #f7f4ef;
+
+  /* Vermilion: our one accent colour */
+  --vermilion-400: #f06e57;
+  --vermilion-500: #e8553d;
+  --vermilion-600: #c9412b;
+  --vermilion-50: #fff6f1;
 }
 
+/* ---------- Layer 2: semantic roles ---------- */
+:root {
+  color-scheme: dark;
+
+  /* Surfaces, from back to front */
+  --canvas: var(--charcoal-900);
+  --surface: var(--charcoal-800);
+  --surface-raised: var(--charcoal-700);
+  --glass: rgb(33 30 27 / 0.62);
+
+  /* Text */
+  --ink: var(--paper-100);
+  --ink-strong: var(--paper-50);
+  --ink-muted: var(--charcoal-400);
+
+  /* Interaction */
+  --accent: var(--vermilion-500);
+  --accent-hover: var(--vermilion-400);
+  --accent-pressed: var(--vermilion-600);
+  --accent-ink: var(--vermilion-50);
+
+  /* Hairlines instead of thick borders */
+  --line: rgb(237 232 224 / 0.08);
+  --line-strong: rgb(237 232 224 / 0.16);
+
+  /* Motion */
+  --duration-fast: 150ms;
+  --duration-base: 300ms;
+  --duration-slow: 700ms;
+}
+
+/* ---------- Layer 3: component tokens ---------- */
+:root {
+  /* Mural tiles */
+  --tile-gap: 4px;
+  --tile-filter-locked: grayscale(1) contrast(0.9) brightness(0.72);
+  --tile-filter-restored: none;
+  --tile-restore-duration: var(--duration-slow);
+
+  /* Buttons */
+  --button-lift: -2px;
+}
+
+/*
+ * ---------- Tailwind bridge ----------
+ * @theme turns tokens into Tailwind classes:
+ *   --color-canvas  ->  bg-canvas, text-canvas, border-canvas ...
+ *   --font-display  ->  font-display
+ * "inline" means the class uses the var() reference directly, so it
+ * always follows our semantic layer.
+ */
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  /* Wipe Tailwind's default palette (blue-500, zinc-50, ...) so only our
+     tokens exist. Using an off-brand colour now fails to compile. */
+  --color-*: initial;
+
+  --color-canvas: var(--canvas);
+  --color-surface: var(--surface);
+  --color-surface-raised: var(--surface-raised);
+  --color-glass: var(--glass);
+  --color-ink: var(--ink);
+  --color-ink-strong: var(--ink-strong);
+  --color-ink-muted: var(--ink-muted);
+  --color-accent: var(--accent);
+  --color-accent-hover: var(--accent-hover);
+  --color-accent-pressed: var(--accent-pressed);
+  --color-accent-ink: var(--accent-ink);
+  --color-line: var(--line);
+  --color-line-strong: var(--line-strong);
+  --color-transparent: transparent;
+
+  --font-display: var(--font-fraunces), Georgia, "Times New Roman", serif;
+  --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-geist-mono), ui-monospace, monospace;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+/* Static tokens: no runtime switching needed, so plain @theme */
+@theme {
+  /* Type scale: each size carries its own line-height and tracking */
+  --text-display: clamp(2.75rem, 6vw, 5rem);
+  --text-display--line-height: 1;
+  --text-display--letter-spacing: -0.035em;
+  --text-title: clamp(1.75rem, 3vw, 2.5rem);
+  --text-title--line-height: 1.1;
+  --text-title--letter-spacing: -0.025em;
+  --text-label: 0.6875rem;
+  --text-label--line-height: 1.2;
+  --text-label--letter-spacing: 0.14em;
+
+  --radius-tile: 6px;
+  --radius-panel: 22px;
+  --radius-pill: 999px;
+
+  /* Soft, high-diffusion shadows, plus an accent glow for hover */
+  --shadow-soft: 0 30px 60px -30px rgb(0 0 0 / 0.55), 0 2px 6px rgb(0 0 0 / 0.12);
+  --shadow-lift: 0 40px 80px -30px rgb(0 0 0 / 0.65), 0 4px 12px rgb(0 0 0 / 0.16);
+  --shadow-glow: 0 14px 34px -12px rgb(232 85 61 / 0.7);
+
+  --ease-out-soft: cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--canvas);
+  color: var(--ink);
+}
+
+/* ---------- Components that read layer-3 tokens ---------- */
+@layer components {
+  /* data-state is set by Tile.tsx: "locked" (charcoal) or "restored" (colour) */
+  .mural-tile {
+    filter: var(--tile-filter-locked);
+    transition: filter var(--tile-restore-duration) var(--ease-out-soft);
+  }
+  .mural-tile[data-state="restored"] {
+    filter: var(--tile-filter-restored);
+  }
+}
+
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+  }
 }
