@@ -3,19 +3,21 @@
 import { useState, type ReactNode } from "react";
 import { MuralMagic, TAP_MS } from "@/components/magic/MuralMagic";
 import { playChime } from "@/lib/chime";
+import type { Mural as MuralData } from "@/lib/types";
 import { Mural } from "./Mural";
-import { useMural } from "./MuralStore";
 import { NeedPanel } from "./NeedPanel";
+import { useMuralState } from "./useMuralState";
 
 type MuralExperienceProps = {
+  mural: MuralData; // loaded from the database by the page, on the server
   children: ReactNode; // the static intro, rendered on the server
 };
 
-// The interactive part of the home page. The tiles come from the shared
-// store; this component only keeps UI state (which panel is open, whether
-// the celebration is playing).
-export function MuralExperience({ children }: MuralExperienceProps) {
-  const { mural, tiles, pledge, skipToFinale, reset } = useMural();
+// The interactive part of a mural page. Tile data and saving live in
+// useMuralState; this component keeps UI state (which panel is open,
+// whether the celebration is playing).
+export function MuralExperience({ mural: initialMural, children }: MuralExperienceProps) {
+  const { mural, tiles, error, pledge, runDemo } = useMuralState(initialMural);
   const [selectedId, setSelectedId] = useState<number | null>(null);
   const [justRestoredId, setJustRestoredId] = useState<number | null>(null);
   const [isCelebrating, setIsCelebrating] = useState(false);
@@ -27,29 +29,24 @@ export function MuralExperience({ children }: MuralExperienceProps) {
   const isComplete = restored === total;
 
   function handlePledge(id: number) {
-    pledge(id);
-    setSelectedId(null);
-    setJustRestoredId(id);
-
-    // Was this the last locked tile? We decide here, inside the click, so the
-    // chime is allowed to play (browsers block sound that isn't from a click).
+    // Was this the last locked tile? We decide here, inside the click and
+    // before any waiting, so the chime is allowed to play (browsers block
+    // sound that doesn't come straight from a click).
     const lockedBefore = tiles.filter((t) => t.status === "locked");
     if (lockedBefore.length === 1 && lockedBefore[0].id === id) {
       setIsCelebrating(true);
       playChime(TAP_MS / 1000);
     }
+
+    setSelectedId(null);
+    setJustRestoredId(id);
+    void pledge(id); // starts the request; the tile is coloured immediately
   }
 
-  function handleSkipToFinale() {
-    skipToFinale();
+  function handleDemo(action: "reset" | "skip-to-finale") {
     setJustRestoredId(null);
     setIsCelebrating(false);
-  }
-
-  function handleReset() {
-    reset();
-    setJustRestoredId(null);
-    setIsCelebrating(false);
+    void runDemo(action);
   }
 
   return (
@@ -83,17 +80,23 @@ export function MuralExperience({ children }: MuralExperienceProps) {
           <p className="font-display text-title text-accent">The wall is whole again.</p>
         )}
 
+        {error && (
+          <p role="alert" className="rounded-panel bg-surface-raised p-4 text-sm text-danger">
+            {error}
+          </p>
+        )}
+
         <div className="flex flex-wrap gap-x-6 gap-y-2">
           <button
             type="button"
-            onClick={handleSkipToFinale}
+            onClick={() => handleDemo("skip-to-finale")}
             className="font-mono text-label uppercase text-ink-muted underline-offset-4 transition-colors duration-300 hover:text-ink hover:underline"
           >
             Skip to final tile
           </button>
           <button
             type="button"
-            onClick={handleReset}
+            onClick={() => handleDemo("reset")}
             className="font-mono text-label uppercase text-ink-muted underline-offset-4 transition-colors duration-300 hover:text-ink hover:underline"
           >
             Reset demo

@@ -2,12 +2,13 @@
 
 import { useState } from "react";
 import { Mural } from "@/components/mural/Mural";
-import { useMural } from "@/components/mural/MuralStore";
+import { useMuralState } from "@/components/mural/useMuralState";
+import type { Mural as MuralData } from "@/lib/types";
 import { NeedForm } from "./NeedForm";
 
 // The shelter's view: pick a tile on the mural, then edit what it asks for.
-export function AdminBoard() {
-  const { mural, tiles, updateNeed } = useMural();
+export function AdminBoard({ mural: initialMural }: { mural: MuralData }) {
+  const { mural, tiles, saveNeed } = useMuralState(initialMural);
   const [selectedId, setSelectedId] = useState<number>(mural.finaleTileId);
 
   const selectedTile = tiles.find((t) => t.id === selectedId) ?? null;
@@ -20,7 +21,7 @@ export function AdminBoard() {
         <p className="font-mono text-label uppercase text-ink-muted">
           Shelter admin · demo mode, no sign-in
         </p>
-        <h1 className="font-display text-title text-ink-strong">Map needs to tiles</h1>
+        <h1 className="font-display text-title text-ink-strong">{mural.title}</h1>
         <dl className="flex flex-wrap gap-x-10 gap-y-3">
           <div>
             <dt className="text-sm text-ink-muted">Tiles waiting</dt>
@@ -54,7 +55,7 @@ export function AdminBoard() {
 
         {selectedTile && (
           // key: switching tiles gives a fresh form with that tile's values.
-          <NeedForm key={selectedTile.id} tile={selectedTile} onSave={updateNeed} />
+          <NeedForm key={selectedTile.id} tile={selectedTile} onSave={saveNeed} />
         )}
       </div>
     </div>

@@ -1,5 +1,6 @@
 import Link from "next/link";
-import { NavLinks } from "./NavLinks";
+import { Suspense } from "react";
+import { NavLinks, NavList } from "./NavLinks";
 
 // A frosted bar that stays at the top while the page scrolls under it.
 export function SiteHeader() {
@@ -15,7 +16,9 @@ export function SiteHeader() {
         >
           MuralAid
         </Link>
-        <NavLinks />
+        <Suspense fallback={<NavList pathname={null} />}>
+          <NavLinks />
+        </Suspense>
       </nav>
     </header>
   );

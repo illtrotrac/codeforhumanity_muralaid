@@ -1,24 +1,24 @@
-import { MuralExperience } from "@/components/mural/MuralExperience";
-import { sampleMural } from "@/data/sample-mural";
+import { Suspense } from "react";
+import { MuralShelf, MuralShelfFallback } from "@/components/murals/MuralShelf";
 
-// A Server Component: the intro text below is rendered to plain HTML on the
-// server and handed to the interactive MuralExperience as children.
+// Home: every mural, one card each. The heading is static and sent
+// instantly; the cards stream in once the database has answered.
 export default function Home() {
   return (
-    <main className="mx-auto w-full max-w-6xl flex-1 px-6 py-16 lg:py-24">
-      <MuralExperience>
-        <p className="font-mono text-label uppercase text-ink-muted">
-          {sampleMural.location}
-        </p>
+    <main className="mx-auto flex w-full max-w-6xl flex-1 flex-col gap-12 px-6 py-16 lg:py-24">
+      <header className="flex max-w-[52ch] flex-col gap-4">
+        <p className="font-mono text-label uppercase text-ink-muted">MuralAid</p>
         <h1 className="font-display text-display text-ink-strong text-balance">
-          {sampleMural.title}
+          Every wall tells a neighbour&apos;s story.
         </h1>
-        <p className="max-w-[48ch] text-lg text-ink-muted">
-          Each tile is a real need from a neighbour: a hot meal, a winter coat,
-          a week of bus fare. Fund one, and that part of the wall gets its
-          colour back.
+        <p className="text-lg text-ink-muted">
+          Each mural is made of real needs. Fund one, and that part of the wall
+          gets its colour back.
         </p>
-      </MuralExperience>
+      </header>
+      <Suspense fallback={<MuralShelfFallback />}>
+        <MuralShelf basePath="/murals" />
+      </Suspense>
     </main>
   );
 }

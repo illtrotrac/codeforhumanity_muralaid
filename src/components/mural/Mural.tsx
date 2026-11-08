@@ -1,5 +1,5 @@
 import type { CSSProperties, ReactNode } from "react";
-import type { Mural as MuralData, MuralTile } from "@/data/sample-mural";
+import type { Mural as MuralData, MuralTile } from "@/lib/types";
 import { TAP_MS } from "@/components/magic/MuralMagic";
 import { Tile } from "./Tile";
 

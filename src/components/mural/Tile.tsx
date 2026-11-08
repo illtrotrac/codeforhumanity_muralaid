@@ -1,5 +1,5 @@
 import type { CSSProperties } from "react";
-import type { MuralTile } from "@/data/sample-mural";
+import type { MuralTile } from "@/lib/types";
 
 type TileProps = {
   tile: MuralTile;

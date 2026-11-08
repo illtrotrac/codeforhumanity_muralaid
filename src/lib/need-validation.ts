@@ -1,4 +1,4 @@
-import type { Need } from "@/data/sample-mural";
+import type { Need } from "./types";
 
 // The rules for a valid need, kept in one plain function with no React.
 // The admin form uses it now; in step 4 the server runs the same function,

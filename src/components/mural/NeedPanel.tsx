@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import type { MuralTile } from "@/data/sample-mural";
+import type { MuralTile } from "@/lib/types";
 
 type NeedPanelProps = {
   tile: MuralTile | null; // null means the panel is closed

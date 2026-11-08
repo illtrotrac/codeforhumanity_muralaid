@@ -1,7 +1,7 @@
 import { mkdirSync } from "node:fs";
 import path from "node:path";
 import { DatabaseSync } from "node:sqlite";
-import { seedIfEmpty } from "./seed";
+import { seedMissingMurals } from "./seed";
 import { transaction } from "./transaction";
 
 // One SQLite file on disk is our whole database. It lives in /data, which
@@ -74,7 +74,7 @@ function open(): DatabaseSync {
     PRAGMA busy_timeout = 5000;  -- wait up to 5s for a lock instead of failing
   `);
   migrate(db);
-  seedIfEmpty(db);
+  seedMissingMurals(db);
   return db;
 }
 

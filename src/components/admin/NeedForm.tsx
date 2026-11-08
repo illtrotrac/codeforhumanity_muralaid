@@ -1,7 +1,8 @@
 "use client";
 
 import { useState, type FormEvent } from "react";
-import type { MuralTile, Need } from "@/data/sample-mural";
+import type { SaveNeedResult } from "@/components/mural/useMuralState";
+import type { MuralTile, Need } from "@/lib/types";
 import {
   AMOUNT_MAX,
   AMOUNT_MIN,
@@ -12,7 +13,7 @@ import {
 
 type NeedFormProps = {
   tile: MuralTile;
-  onSave: (id: number, need: Need) => void;
+  onSave: (id: number, need: Need) => Promise<SaveNeedResult>;
 };
 
 // The inputs are "uncontrolled": the browser keeps what's typed, and we
@@ -20,6 +21,8 @@ type NeedFormProps = {
 export function NeedForm({ tile, onSave }: NeedFormProps) {
   const [errors, setErrors] = useState<NeedErrors>({});
   const [savedMessage, setSavedMessage] = useState("");
+  const [formError, setFormError] = useState("");
+  const [isSaving, setIsSaving] = useState(false);
   const isFunded = tile.status === "restored";
 
   // Every input gets the same accessibility wiring: a stable id for its
@@ -34,27 +37,39 @@ export function NeedForm({ tile, onSave }: NeedFormProps) {
     };
   }
 
-  function handleSubmit(event: FormEvent<HTMLFormElement>) {
+  function showErrors(next: NeedErrors) {
+    setErrors(next);
+    setSavedMessage("");
+    // Put the cursor in the first field that needs fixing.
+    const firstBad = Object.keys(next)[0];
+    if (firstBad) document.getElementById(`need-${firstBad}`)?.focus();
+  }
+
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault(); // stop the browser reloading the page
     const data = new FormData(event.currentTarget);
+
+    // 1. Check in the browser first: instant feedback, no network trip.
     const result = validateNeed({
       title: data.get("title"),
       detail: data.get("detail"),
       amount: data.get("amount"),
       postedBy: data.get("postedBy"),
     });
+    if (!result.ok) return showErrors(result.errors);
 
-    if (!result.ok) {
-      setErrors(result.errors);
-      setSavedMessage("");
-      // Put the cursor in the first field that needs fixing.
-      const firstBad = Object.keys(result.errors)[0];
-      document.getElementById(`need-${firstBad}`)?.focus();
+    // 2. Send it to the server, which checks again and saves.
+    setErrors({});
+    setFormError("");
+    setIsSaving(true);
+    const saved = await onSave(tile.id, result.need);
+    setIsSaving(false);
+
+    if (!saved.ok) {
+      setFormError(saved.message);
+      if (saved.errors) showErrors(saved.errors);
       return;
     }
-
-    setErrors({});
-    onSave(tile.id, result.need);
     setSavedMessage(`Saved. Tile ${tile.id} now asks for $${result.need.amount}.`);
   }
 
@@ -131,14 +146,21 @@ export function NeedForm({ tile, onSave }: NeedFormProps) {
         <div className="flex flex-wrap items-center gap-4">
           <button
             type="submit"
-            className="rounded-pill bg-accent px-6 py-3.5 font-semibold text-accent-ink transition-all duration-300 ease-out-soft hover:-translate-y-0.5 hover:bg-accent-hover hover:shadow-glow active:bg-accent-pressed"
+            disabled={isSaving}
+            className="rounded-pill bg-accent px-6 py-3.5 font-semibold text-accent-ink transition-all duration-300 ease-out-soft hover:-translate-y-0.5 hover:bg-accent-hover hover:shadow-glow active:bg-accent-pressed disabled:translate-y-0 disabled:opacity-60 disabled:shadow-none"
           >
-            Save need
+            {isSaving ? "Saving…" : "Save need"}
           </button>
           <p aria-live="polite" className="text-sm text-ink-muted">
             {savedMessage}
           </p>
         </div>
+      )}
+
+      {formError && (
+        <p role="alert" className="text-sm text-danger">
+          {formError}
+        </p>
       )}
     </form>
   );
