@@ -6,15 +6,23 @@ import { playChime } from "@/lib/chime";
 import type { DonorNote, Mural as MuralData, PledgeActivity } from "@/lib/types";
 import { KindnessTicker } from "./KindnessTicker";
 import { Mural } from "./Mural";
-import { NeedPanel } from "./NeedPanel";
+import { NeedPanel, type PaymentMode } from "./NeedPanel";
 import { useMuralState } from "./useMuralState";
 
 const TICKER_LENGTH = 5;
+
+const PAYMENT_NOTICES = {
+  cancelled: "Payment cancelled. Nothing was charged, and the region is free again.",
+  refunded: "Someone funded that region just before you, so we've refunded your payment in full.",
+} as const;
 
 type MuralExperienceProps = {
   mural: MuralData; // loaded from the database by the page, on the server
   recentPledges: PledgeActivity[]; // newest first
   canRunDemo: boolean; // show the rehearsal controls (signed-in admins only)
+  paymentMode: PaymentMode;
+  returnedTileId: number | null; // just paid on Stripe: colour this region in on arrival
+  paymentNotice: keyof typeof PAYMENT_NOTICES | null;
   children: ReactNode; // the static intro, rendered on the server
 };
 
@@ -25,14 +33,22 @@ export function MuralExperience({
   mural: initialMural,
   recentPledges,
   canRunDemo,
+  paymentMode,
+  returnedTileId,
+  paymentNotice,
   children,
 }: MuralExperienceProps) {
   const [selectedId, setSelectedId] = useState<number | null>(null);
-  const [justRestoredId, setJustRestoredId] = useState<number | null>(null);
-  const [isCelebrating, setIsCelebrating] = useState(false);
+  // Back from Stripe? Play the crayon animation on the region just paid for,
+  // and the celebration if that payment finished the wall. (No chime: the
+  // browser only allows sound right after a click on this page.)
+  const [justRestoredId, setJustRestoredId] = useState<number | null>(returnedTileId);
+  const [isCelebrating, setIsCelebrating] = useState(
+    () => returnedTileId !== null && initialMural.tiles.every((t) => t.status === "restored"),
+  );
   const [pledges, setPledges] = useState(recentPledges);
 
-  const { mural, tiles, error, isLive, pledge, runDemo } = useMuralState(initialMural, {
+  const { mural, tiles, error, isLive, pledge, checkout, runDemo } = useMuralState(initialMural, {
     onPledge: (p) => {
       // Newest first; drop a duplicate if the same pledge arrives twice.
       setPledges((prev) =>
@@ -120,6 +136,12 @@ export function MuralExperience({
 
         <KindnessTicker pledges={pledges} />
 
+        {paymentNotice && (
+          <p role="status" className="rounded-panel bg-surface-raised p-4 text-sm text-ink">
+            {PAYMENT_NOTICES[paymentNotice]}
+          </p>
+        )}
+
         {error && (
           <p role="alert" className="rounded-panel bg-surface-raised p-4 text-sm text-danger">
             {error}
@@ -160,8 +182,11 @@ export function MuralExperience({
       <NeedPanel
         tile={selectedTile}
         organisation={mural.organisation}
+        paymentMode={paymentMode}
+        canDemoPledge={canRunDemo}
         onClose={() => setSelectedId(null)}
         onPledge={handlePledge}
+        onCheckout={checkout}
       />
 
       {/* Screen readers announce changes to this region out loud. */}

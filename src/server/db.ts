@@ -110,6 +110,19 @@ const MIGRATIONS = [
   ALTER TABLE pledges ADD COLUMN donor_name TEXT CHECK (length(donor_name) <= 40);
   ALTER TABLE pledges ADD COLUMN message    TEXT CHECK (length(message) <= 140);
   `,
+
+  /* v6: Stripe payments */ `
+  -- While someone is on Stripe's payment page, their tile is held for them,
+  -- so two people can't pay for the same coat. The hold expires on its own.
+  ALTER TABLE tiles ADD COLUMN reserved_until   TEXT; -- ISO time; NULL or past = free
+  ALTER TABLE tiles ADD COLUMN reserved_session TEXT; -- the Stripe checkout session holding it
+
+  -- Each Stripe payment can be recorded once only. If Stripe tells us twice
+  -- (the redirect AND the webhook, or a page refresh), the second is ignored.
+  ALTER TABLE pledges ADD COLUMN stripe_session_id TEXT;
+  CREATE UNIQUE INDEX pledges_stripe_session ON pledges (stripe_session_id)
+    WHERE stripe_session_id IS NOT NULL;
+  `,
 ];
 
 function migrate(db: DatabaseSync) {

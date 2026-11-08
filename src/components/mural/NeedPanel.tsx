@@ -5,17 +5,31 @@ import { VerifiedBadge } from "@/components/murals/VerifiedBadge";
 import { MESSAGE_MAX, NAME_MAX, validateNote, type NoteErrors } from "@/lib/note-validation";
 import type { DonorNote, MuralTile, Organisation } from "@/lib/types";
 
+// "stripe": donors pay on Stripe's page. "demo": instant, free pledges.
+export type PaymentMode = "stripe" | "demo";
+
 type NeedPanelProps = {
   tile: MuralTile | null; // null means the panel is closed
   organisation: Organisation; // who asked for every need on this mural
+  paymentMode: PaymentMode;
+  canDemoPledge: boolean; // admins may still pledge for free, for the live pitch
   onClose: () => void;
   onPledge: (id: number, note: DonorNote) => void;
+  onCheckout: (id: number, note: DonorNote) => Promise<string | null>; // resolves to an error, if any
 };
 
 // A side panel built on the native <dialog> element. showModal() gives us,
 // for free: focus moves inside, Tab stays inside, Esc closes it, the page
 // behind becomes inert, and focus returns to the tile when it closes.
-export function NeedPanel({ tile, organisation, onClose, onPledge }: NeedPanelProps) {
+export function NeedPanel({
+  tile,
+  organisation,
+  paymentMode,
+  canDemoPledge,
+  onClose,
+  onPledge,
+  onCheckout,
+}: NeedPanelProps) {
   const dialogRef = useRef<HTMLDialogElement>(null);
 
   // React state says whether the panel should be open; this effect makes
@@ -68,7 +82,14 @@ export function NeedPanel({ tile, organisation, onClose, onPledge }: NeedPanelPr
           <div className="mt-auto">
             {tile.status === "locked" ? (
               // key: a fresh, empty form for each tile you open
-              <PledgeForm key={tile.id} tile={tile} onPledge={onPledge} />
+              <PledgeForm
+                key={tile.id}
+                tile={tile}
+                paymentMode={paymentMode}
+                canDemoPledge={canDemoPledge}
+                onPledge={onPledge}
+                onCheckout={onCheckout}
+              />
             ) : (
               <FundedNote note={tile.note} />
             )}
@@ -79,15 +100,37 @@ export function NeedPanel({ tile, organisation, onClose, onPledge }: NeedPanelPr
   );
 }
 
-function PledgeForm({ tile, onPledge }: { tile: MuralTile; onPledge: NeedPanelProps["onPledge"] }) {
+type PledgeFormProps = Pick<
+  NeedPanelProps,
+  "paymentMode" | "canDemoPledge" | "onPledge" | "onCheckout"
+> & { tile: MuralTile };
+
+function PledgeForm({ tile, paymentMode, canDemoPledge, onPledge, onCheckout }: PledgeFormProps) {
   const [message, setMessage] = useState(""); // kept in state only to drive the counter
   const [errors, setErrors] = useState<NoteErrors>({});
+  const [checkoutError, setCheckoutError] = useState("");
+  const [isRedirecting, setIsRedirecting] = useState(false);
 
-  function handleSubmit(event: FormEvent<HTMLFormElement>) {
+  // One form, two buttons. The clicked button arrives as the event's
+  // "submitter", so we know which path the donor chose.
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const data = new FormData(event.currentTarget);
     const checked = validateNote({ donorName: data.get("donorName"), message: data.get("message") });
     if (!checked.ok) return setErrors(checked.errors);
+    setErrors({});
+
+    const submitter = (event.nativeEvent as SubmitEvent).submitter as HTMLButtonElement | null;
+    if (paymentMode === "stripe" && submitter?.value !== "demo") {
+      setCheckoutError("");
+      setIsRedirecting(true);
+      const problem = await onCheckout(tile.id, checked.note);
+      if (problem) {
+        setIsRedirecting(false);
+        setCheckoutError(problem);
+      }
+      return;
+    }
     // Submitting from the button click still counts as a click for the
     // browser, so the celebration chime is allowed to play.
     onPledge(tile.id, checked.note);
@@ -141,14 +184,39 @@ function PledgeForm({ tile, onPledge }: { tile: MuralTile; onPledge: NeedPanelPr
         </div>
       </div>
 
+      {checkoutError && (
+        <p role="alert" className="text-sm text-danger">
+          {checkoutError}
+        </p>
+      )}
+
       <button
         type="submit"
-        className="rounded-pill bg-accent px-6 py-4 font-semibold text-accent-ink transition-all duration-300 ease-out-soft hover:-translate-y-0.5 hover:bg-accent-hover hover:shadow-glow active:bg-accent-pressed"
+        value={paymentMode === "stripe" ? "pay" : "demo"}
+        disabled={isRedirecting}
+        className="rounded-pill bg-accent px-6 py-4 font-semibold text-accent-ink transition-all duration-300 ease-out-soft hover:-translate-y-0.5 hover:bg-accent-hover hover:shadow-glow active:bg-accent-pressed disabled:translate-y-0 disabled:opacity-60 disabled:shadow-none"
       >
-        Pledge ${tile.need.amount}
+        {paymentMode === "stripe"
+          ? isRedirecting
+            ? "Opening secure payment…"
+            : `Continue to payment · $${tile.need.amount}`
+          : `Pledge $${tile.need.amount}`}
       </button>
+
+      {paymentMode === "stripe" && canDemoPledge && (
+        <button
+          type="submit"
+          value="demo"
+          className="font-mono text-label uppercase text-ink-muted underline-offset-4 transition-colors duration-300 hover:text-ink hover:underline"
+        >
+          Admin: demo pledge without paying
+        </button>
+      )}
+
       <p className="text-center text-sm text-ink-muted">
-        Demo only. No real payment is taken. Notes appear publicly on the wall.
+        {paymentMode === "stripe"
+          ? "Test mode: use card 4242 4242 4242 4242. Notes appear publicly on the wall."
+          : "Demo only. No real payment is taken. Notes appear publicly on the wall."}
       </p>
     </form>
   );

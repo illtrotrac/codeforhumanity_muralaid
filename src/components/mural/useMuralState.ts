@@ -104,6 +104,16 @@ export function useMuralState(initial: Mural, live: LiveHandlers = {}) {
     setError(`Your pledge didn't go through: ${result.error}`);
   }
 
+  // Paid pledges: get a Stripe payment page and go there. The tile is NOT
+  // coloured here; that happens only once the server confirms payment.
+  // Returns an error message to show, or nothing if we're leaving the page.
+  async function checkout(id: number, note: DonorNote): Promise<string | null> {
+    const result = await muralApi.checkout(slug, id, note);
+    if (!result.ok) return result.error;
+    window.location.assign(result.data.url);
+    return null;
+  }
+
   async function saveNeed(id: number, need: Need): Promise<SaveNeedResult> {
     const result = await muralApi.saveNeed(slug, id, need);
     if (!result.ok) return { ok: false, message: result.error, errors: result.errors };
@@ -118,5 +128,5 @@ export function useMuralState(initial: Mural, live: LiveHandlers = {}) {
     else setError(result.error);
   }
 
-  return { mural: initial, tiles, error, isLive, pledge, saveNeed, runDemo };
+  return { mural: initial, tiles, error, isLive, pledge, checkout, saveNeed, runDemo };
 }

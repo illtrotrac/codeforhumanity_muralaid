@@ -195,60 +195,165 @@ export function recentPledges(slug: string, limit = 5): PledgeActivity[] {
 
 // Writes return a result object instead of throwing for expected problems,
 // so the API route can turn each one into the right HTTP status.
-type WriteFailure = { ok: false; reason: "not_found" | "already_funded" };
+type WriteFailure = { ok: false; reason: "not_found" | "already_funded" | "reserved" };
 
 export type PledgeResult =
   | { ok: true; tile: MuralTile; completed: boolean; pledge: PledgeActivity }
   | WriteFailure;
 
+const now = () => new Date().toISOString();
+
+// The one place a tile becomes funded, used by demo pledges AND Stripe
+// payments. Call it inside a transaction.
+//   holdingSession: the Stripe session allowed to fund a reserved tile
+function fundTile(
+  mural: MuralRow,
+  tileNumber: number,
+  amount: number | null, // null = the tile's own need amount
+  note: DonorNote,
+  holdingSession: string | null,
+): PledgeResult {
+  const db = getDb();
+
+  // Compare-and-set: only flip the tile if it is STILL locked, and nobody
+  // else is mid-payment for it. If two donors click at once, exactly one
+  // UPDATE changes a row; the other sees changes === 0.
+  const { changes } = db
+    .prepare(
+      `UPDATE tiles SET status = 'restored', reserved_until = NULL, reserved_session = NULL
+        WHERE mural_id = ? AND tile_number = ? AND status = 'locked'
+          AND (reserved_until IS NULL OR reserved_until < ? OR reserved_session IS ?)`,
+    )
+    .run(mural.id, tileNumber, now(), holdingSession);
+
+  if (changes === 0) {
+    const existing = db
+      .prepare("SELECT status, reserved_until FROM tiles WHERE mural_id = ? AND tile_number = ?")
+      .get(mural.id, tileNumber) as { status: string; reserved_until: string | null } | undefined;
+    if (!existing) return { ok: false, reason: "not_found" };
+    if (existing.status === "restored") return { ok: false, reason: "already_funded" };
+    return { ok: false, reason: "reserved" };
+  }
+
+  const paid = amount ?? findTile(mural.id, tileNumber)!.need_amount;
+  // RETURNING hands back the row we just inserted, including its timestamp.
+  const { created_at } = db
+    .prepare(
+      `INSERT INTO pledges (mural_id, tile_number, amount, donor_name, message, stripe_session_id)
+       VALUES (?, ?, ?, ?, ?, ?) RETURNING created_at`,
+    )
+    .get(mural.id, tileNumber, paid, note.donorName, note.message, holdingSession) as {
+    created_at: string;
+  };
+  const tile = findTile(mural.id, tileNumber)!; // re-read, now with its note
+
+  const { locked } = db
+    .prepare("SELECT COUNT(*) AS locked FROM tiles WHERE mural_id = ? AND status = 'locked'")
+    .get(mural.id) as { locked: number };
+
+  return {
+    ok: true,
+    tile: toTile(tile, mural.grid_cols),
+    completed: locked === 0,
+    pledge: {
+      tileId: tileNumber,
+      title: tile.need_title,
+      amount: paid,
+      at: toIsoUtc(created_at),
+      donorName: note.donorName,
+    },
+  };
+}
+
+// An instant pledge with no payment step (demo mode).
 export function pledgeTile(slug: string, tileNumber: number, note: DonorNote): PledgeResult {
+  return transaction(getDb(), () => {
+    const mural = findMural(slug);
+    if (!mural) return { ok: false, reason: "not_found" };
+    return fundTile(mural, tileNumber, null, note, null);
+  });
+}
+
+// ---------- Stripe checkout ----------
+
+export type Reservation =
+  | { ok: true; muralTitle: string; need: Need; until: string }
+  | WriteFailure;
+
+// Hold a tile for one donor while they pay. Same compare-and-set idea:
+// only succeeds if the tile is locked and not already held.
+export function reserveTile(slug: string, tileNumber: number, minutes: number): Reservation {
   const db = getDb();
   return transaction(db, () => {
     const mural = findMural(slug);
     if (!mural) return { ok: false, reason: "not_found" };
 
-    // Compare-and-set: only flip the tile if it is STILL locked. If two
-    // donors click at once, exactly one UPDATE changes a row; the other
-    // sees changes === 0 and is told the tile was already funded.
+    const until = new Date(Date.now() + minutes * 60_000).toISOString();
     const { changes } = db
       .prepare(
-        `UPDATE tiles SET status = 'restored'
-          WHERE mural_id = ? AND tile_number = ? AND status = 'locked'`,
+        `UPDATE tiles SET reserved_until = ?, reserved_session = NULL
+          WHERE mural_id = ? AND tile_number = ? AND status = 'locked'
+            AND (reserved_until IS NULL OR reserved_until < ?)`,
       )
-      .run(mural.id, tileNumber);
+      .run(until, mural.id, tileNumber, now());
 
-    if (changes === 0) {
-      return findTile(mural.id, tileNumber)
-        ? { ok: false, reason: "already_funded" }
-        : { ok: false, reason: "not_found" };
-    }
-
-    const amount = findTile(mural.id, tileNumber)!.need_amount;
-    // RETURNING hands back the row we just inserted, including its timestamp.
-    const { created_at } = db
-      .prepare(
-        `INSERT INTO pledges (mural_id, tile_number, amount, donor_name, message)
-         VALUES (?, ?, ?, ?, ?) RETURNING created_at`,
-      )
-      .get(mural.id, tileNumber, amount, note.donorName, note.message) as { created_at: string };
-    const tile = findTile(mural.id, tileNumber)!; // re-read, now with its note
-
-    const { locked } = db
-      .prepare("SELECT COUNT(*) AS locked FROM tiles WHERE mural_id = ? AND status = 'locked'")
-      .get(mural.id) as { locked: number };
-
+    const tile = findTile(mural.id, tileNumber);
+    if (!tile) return { ok: false, reason: "not_found" };
+    if (changes === 0) return { ok: false, reason: tile.status === "restored" ? "already_funded" : "reserved" };
     return {
       ok: true,
-      tile: toTile(tile, mural.grid_cols),
-      completed: locked === 0,
-      pledge: {
-        tileId: tileNumber,
-        title: tile.need_title,
-        amount: tile.need_amount,
-        at: toIsoUtc(created_at),
-        donorName: note.donorName,
-      },
+      muralTitle: mural.title,
+      need: { title: tile.need_title, detail: tile.need_detail, amount: tile.need_amount },
+      until,
     };
+  });
+}
+
+// Remember which Stripe session holds the tile, once Stripe has given us one.
+export function attachSession(slug: string, tileNumber: number, sessionId: string) {
+  getDb()
+    .prepare(
+      `UPDATE tiles SET reserved_session = ?
+        WHERE tile_number = ? AND mural_id = (SELECT id FROM murals WHERE slug = ?)`,
+    )
+    .run(sessionId, tileNumber, slug);
+}
+
+// Free a tile: the donor cancelled, Stripe failed, or the session expired.
+// Only releases the hold if that exact session (or no session) owns it.
+export function releaseReservation(slug: string, tileNumber: number, sessionId: string | null) {
+  getDb()
+    .prepare(
+      `UPDATE tiles SET reserved_until = NULL, reserved_session = NULL
+        WHERE tile_number = ? AND mural_id = (SELECT id FROM murals WHERE slug = ?)
+          AND status = 'locked' AND reserved_session IS ?`,
+    )
+    .run(tileNumber, slug, sessionId);
+}
+
+export type CheckoutResult =
+  | (PledgeResult & { ok: true; alreadyRecorded: false })
+  | { ok: true; alreadyRecorded: true }
+  | WriteFailure;
+
+// Record a payment Stripe has CONFIRMED. Safe to call more than once for
+// the same session: the second call sees the pledge and does nothing.
+export function completeCheckout(
+  slug: string,
+  tileNumber: number,
+  sessionId: string,
+  amountPaid: number,
+  note: DonorNote,
+): CheckoutResult {
+  const db = getDb();
+  return transaction(db, () => {
+    const seen = db.prepare("SELECT 1 FROM pledges WHERE stripe_session_id = ?").get(sessionId);
+    if (seen) return { ok: true, alreadyRecorded: true };
+
+    const mural = findMural(slug);
+    if (!mural) return { ok: false, reason: "not_found" };
+    const result = fundTile(mural, tileNumber, amountPaid, note, sessionId);
+    return result.ok ? { ...result, alreadyRecorded: false } : result;
   });
 }
 

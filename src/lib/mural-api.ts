@@ -38,6 +38,14 @@ export const muralApi = {
       body: JSON.stringify(note),
     }),
 
+  // Starts a Stripe payment; the response holds the payment page's address.
+  checkout: (slug: string, tileId: number, note: DonorNote) =>
+    request<{ url: string }>(`${base(slug)}/tiles/${tileId}/checkout`, {
+      method: "POST",
+      headers: json,
+      body: JSON.stringify(note),
+    }),
+
   saveNeed: (slug: string, tileId: number, need: Need) =>
     request<{ tile: MuralTile }>(`${base(slug)}/tiles/${tileId}`, {
       method: "PATCH",
