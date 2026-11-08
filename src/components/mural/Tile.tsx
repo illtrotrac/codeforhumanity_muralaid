@@ -6,12 +6,15 @@ type TileProps = {
   gridSize: number;
   imageSrc: string;
   justRestored: boolean;
+  // Admin mode: the tile is a toggle that picks it for editing. Left
+  // undefined on the public page, where a click opens the need panel.
+  selected?: boolean;
   onSelect: (id: number) => void;
 };
 
 // One square of the mural. Every tile uses the SAME image, scaled up to
 // gridSize x 100%, then shifted so only this tile's slice is visible.
-export function Tile({ tile, gridSize, imageSrc, justRestored, onSelect }: TileProps) {
+export function Tile({ tile, gridSize, imageSrc, justRestored, selected, onSelect }: TileProps) {
   const last = gridSize - 1;
   const statusText = tile.status === "restored" ? "restored" : "waiting for support";
   // Distance from the centre of the grid, in tiles. The celebration's light
@@ -26,7 +29,8 @@ export function Tile({ tile, gridSize, imageSrc, justRestored, onSelect }: TileP
         className="mural-tile block size-full rounded-tile"
         data-state={tile.status}
         data-just-restored={justRestored || undefined}
-        aria-haspopup="dialog"
+        aria-haspopup={selected === undefined ? "dialog" : undefined}
+        aria-pressed={selected}
         aria-label={`Tile ${tile.id}: ${tile.need.title}, $${tile.need.amount}, ${statusText}`}
         onClick={() => onSelect(tile.id)}
         style={

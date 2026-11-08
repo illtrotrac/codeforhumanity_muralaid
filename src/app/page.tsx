@@ -6,7 +6,7 @@ import { sampleMural } from "@/data/sample-mural";
 export default function Home() {
   return (
     <main className="mx-auto w-full max-w-6xl flex-1 px-6 py-16 lg:py-24">
-      <MuralExperience mural={sampleMural}>
+      <MuralExperience>
         <p className="font-mono text-label uppercase text-ink-muted">
           {sampleMural.location}
         </p>

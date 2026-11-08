@@ -1,21 +1,21 @@
 "use client";
 
 import { useState, type ReactNode } from "react";
-import type { Mural as MuralData } from "@/data/sample-mural";
 import { MuralMagic, TAP_MS } from "@/components/magic/MuralMagic";
 import { playChime } from "@/lib/chime";
 import { Mural } from "./Mural";
+import { useMural } from "./MuralStore";
 import { NeedPanel } from "./NeedPanel";
 
 type MuralExperienceProps = {
-  mural: MuralData;
   children: ReactNode; // the static intro, rendered on the server
 };
 
-// The interactive part of the page. It owns all the state; Mural and
-// NeedPanel just display it and report clicks back up.
-export function MuralExperience({ mural, children }: MuralExperienceProps) {
-  const [tiles, setTiles] = useState(mural.tiles);
+// The interactive part of the home page. The tiles come from the shared
+// store; this component only keeps UI state (which panel is open, whether
+// the celebration is playing).
+export function MuralExperience({ children }: MuralExperienceProps) {
+  const { mural, tiles, pledge, skipToFinale, reset } = useMural();
   const [selectedId, setSelectedId] = useState<number | null>(null);
   const [justRestoredId, setJustRestoredId] = useState<number | null>(null);
   const [isCelebrating, setIsCelebrating] = useState(false);
@@ -27,10 +27,7 @@ export function MuralExperience({ mural, children }: MuralExperienceProps) {
   const isComplete = restored === total;
 
   function handlePledge(id: number) {
-    // Never change state in place: build a new array with one tile replaced.
-    setTiles((prev) =>
-      prev.map((t) => (t.id === id ? { ...t, status: "restored" } : t)),
-    );
+    pledge(id);
     setSelectedId(null);
     setJustRestoredId(id);
 
@@ -43,18 +40,14 @@ export function MuralExperience({ mural, children }: MuralExperienceProps) {
     }
   }
 
-  // Demo helper: restore everything except the finale tile, so one live
-  // pledge on stage completes the mural.
   function handleSkipToFinale() {
-    setTiles((prev) =>
-      prev.map((t) => ({ ...t, status: t.id === mural.finaleTileId ? "locked" : "restored" })),
-    );
+    skipToFinale();
     setJustRestoredId(null);
     setIsCelebrating(false);
   }
 
   function handleReset() {
-    setTiles(mural.tiles);
+    reset();
     setJustRestoredId(null);
     setIsCelebrating(false);
   }

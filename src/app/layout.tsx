@@ -1,5 +1,8 @@
 import type { Metadata } from "next";
 import { Fraunces, Geist, Geist_Mono } from "next/font/google";
+import { MuralProvider } from "@/components/mural/MuralStore";
+import { SiteHeader } from "@/components/site/SiteHeader";
+import { sampleMural } from "@/data/sample-mural";
 import "./globals.css";
 
 // next/font downloads these at build time and serves them from our own
@@ -31,7 +34,11 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       lang="en"
       className={`${fraunces.variable} ${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col font-sans">{children}</body>
+      <body className="min-h-full flex flex-col font-sans">
+        <SiteHeader />
+        {/* The provider wraps only the pages, so the header stays a plain server component. */}
+        <MuralProvider initialMural={sampleMural}>{children}</MuralProvider>
+      </body>
     </html>
   );
 }

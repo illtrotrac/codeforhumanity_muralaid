@@ -58,6 +58,9 @@
   --accent-pressed: var(--vermilion-600);
   --accent-ink: var(--vermilion-50);
 
+  /* Feedback. Same hue family as the accent, but its own role. */
+  --danger: var(--vermilion-400);
+
   /* Magic: the completion moment */
   --magic: var(--gold-200);
   --magic-glow: rgb(233 185 73 / 0.55);
@@ -86,6 +89,14 @@
   --tile-restore-duration: var(--duration-slow);
   --tile-hover-scale: 1.06;
   --tile-hover-ring: 0 0 0 2px var(--accent), 0 18px 30px -12px rgb(0 0 0 / 0.7);
+  --tile-selected-ring: 0 0 0 2px var(--ink-strong), 0 0 0 5px var(--accent);
+
+  /* Form fields */
+  --field-bg: var(--canvas);
+  --field-radius: 12px;
+  --field-ring: inset 0 0 0 1px var(--line-strong);
+  --field-ring-focus: inset 0 0 0 1px var(--accent), 0 0 0 4px rgb(232 85 61 / 0.18);
+  --field-ring-invalid: inset 0 0 0 1px var(--danger);
 
   /* Need panel */
   --panel-width: 28rem;
@@ -121,6 +132,7 @@
   --color-accent-hover: var(--accent-hover);
   --color-accent-pressed: var(--accent-pressed);
   --color-accent-ink: var(--accent-ink);
+  --color-danger: var(--danger);
   --color-magic: var(--magic);
   --color-line: var(--line);
   --color-line-strong: var(--line-strong);
@@ -187,9 +199,37 @@ body {
   .mural-tile[data-state="locked"]:hover {
     filter: var(--tile-filter-peek);
   }
+  /* Admin: the tile being edited */
+  .mural-tile[aria-pressed="true"] {
+    z-index: 2;
+    box-shadow: var(--tile-selected-ring);
+  }
   /* A one-off glow on the tile someone just funded */
   .mural-tile[data-just-restored] {
     animation: tile-bloom 1.2s var(--ease-out-soft);
+  }
+
+  /* Text inputs: no borders, just a hairline ring that warms up on focus */
+  .field {
+    width: 100%;
+    padding: 0.8rem 1rem;
+    border: 0;
+    border-radius: var(--field-radius);
+    background: var(--field-bg);
+    color: var(--ink-strong);
+    box-shadow: var(--field-ring);
+    outline: none;
+    transition: box-shadow var(--duration-base) var(--ease-out-soft);
+  }
+  .field:focus-visible {
+    box-shadow: var(--field-ring-focus);
+  }
+  .field[aria-invalid="true"] {
+    box-shadow: var(--field-ring-invalid);
+  }
+  .field:disabled {
+    color: var(--ink-muted);
+    cursor: not-allowed;
   }
 
   /* Need panel: a bottom sheet on phones, a left-side panel on large screens

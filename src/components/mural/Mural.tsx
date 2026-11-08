@@ -9,6 +9,7 @@ type MuralProps = {
   justRestoredId: number | null;
   isComplete: boolean;
   isCelebrating: boolean;
+  selectedId?: number | null; // pass this (even null) to put tiles in admin mode
   onSelectTile: (id: number) => void;
   children?: ReactNode; // overlays drawn on top of the grid, like the celebration
 };
@@ -21,9 +22,12 @@ export function Mural({
   justRestoredId,
   isComplete,
   isCelebrating,
+  selectedId,
   onSelectTile,
   children,
 }: MuralProps) {
+  const isAdmin = selectedId !== undefined;
+
   return (
     <figure className="flex flex-col gap-4">
       <div className="relative">
@@ -47,6 +51,7 @@ export function Mural({
               gridSize={mural.gridSize}
               imageSrc={mural.imageSrc}
               justRestored={tile.id === justRestoredId}
+              selected={isAdmin ? tile.id === selectedId : undefined}
               onSelect={onSelectTile}
             />
           ))}
