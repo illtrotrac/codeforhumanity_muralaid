@@ -26,6 +26,7 @@ export type Mural = {
   imageAlt: string;
   gridSize: number; // 6 means a 6x6 grid
   isAiSample: boolean;
+  finaleTileId: number; // the tile the live demo saves for last
   tiles: MuralTile[];
 };
 
@@ -77,5 +78,6 @@ export const sampleMural: Mural = {
     "A painted street mural of neighbours sharing a meal at a long table, while a family hands a red winter coat to a young man under a sunrise over colourful houses.",
   gridSize: GRID_SIZE,
   isAiSample: true,
+  finaleTileId: COAT_TILE_ID,
   tiles: buildTiles(GRID_SIZE),
 };

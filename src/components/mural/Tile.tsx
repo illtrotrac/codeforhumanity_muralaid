@@ -1,3 +1,4 @@
+import type { CSSProperties } from "react";
 import type { MuralTile } from "@/data/sample-mural";
 
 type TileProps = {
@@ -13,6 +14,10 @@ type TileProps = {
 export function Tile({ tile, gridSize, imageSrc, justRestored, onSelect }: TileProps) {
   const last = gridSize - 1;
   const statusText = tile.status === "restored" ? "restored" : "waiting for support";
+  // Distance from the centre of the grid, in tiles. The celebration's light
+  // wave uses it to reach the outer tiles last.
+  const middle = last / 2;
+  const waveDistance = Math.hypot(tile.row - middle, tile.col - middle);
 
   return (
     <li className="aspect-square">
@@ -24,11 +29,14 @@ export function Tile({ tile, gridSize, imageSrc, justRestored, onSelect }: TileP
         aria-haspopup="dialog"
         aria-label={`Tile ${tile.id}: ${tile.need.title}, $${tile.need.amount}, ${statusText}`}
         onClick={() => onSelect(tile.id)}
-        style={{
-          backgroundImage: `url(${imageSrc})`,
-          backgroundSize: `${gridSize * 100}% ${gridSize * 100}%`,
-          backgroundPosition: `${(tile.col / last) * 100}% ${(tile.row / last) * 100}%`,
-        }}
+        style={
+          {
+            backgroundImage: `url(${imageSrc})`,
+            backgroundSize: `${gridSize * 100}% ${gridSize * 100}%`,
+            backgroundPosition: `${(tile.col / last) * 100}% ${(tile.row / last) * 100}%`,
+            "--wave-distance": waveDistance.toFixed(2),
+          } as CSSProperties
+        }
       />
     </li>
   );

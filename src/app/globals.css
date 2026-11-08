@@ -30,6 +30,10 @@
   --vermilion-500: #e8553d;
   --vermilion-600: #c9412b;
   --vermilion-50: #fff6f1;
+
+  /* Gold: used ONLY for the mural-complete celebration */
+  --gold-200: #fbe7b5;
+  --gold-400: #e9b949;
 }
 
 /* ---------- Layer 2: semantic roles ---------- */
@@ -53,6 +57,14 @@
   --accent-hover: var(--vermilion-400);
   --accent-pressed: var(--vermilion-600);
   --accent-ink: var(--vermilion-50);
+
+  /* Magic: the completion moment */
+  --magic: var(--gold-200);
+  --magic-glow: rgb(233 185 73 / 0.55);
+  --sparkle-1: var(--gold-200);
+  --sparkle-2: var(--paper-50);
+  --sparkle-3: var(--vermilion-400);
+  --sparkle-4: var(--gold-400);
 
   /* Hairlines instead of thick borders */
   --line: rgb(237 232 224 / 0.08);
@@ -78,6 +90,11 @@
   /* Need panel */
   --panel-width: 28rem;
   --panel-blur: 24px;
+
+  /* Celebration: the light wave ripples out from the wand's tap point */
+  --wave-step: 110ms; /* delay per tile-width of distance from the centre */
+  --wave-duration: 900ms;
+  --complete-glow: 0 0 0 1px var(--magic-glow), 0 0 70px -12px var(--magic-glow);
 }
 
 /*
@@ -104,6 +121,7 @@
   --color-accent-hover: var(--accent-hover);
   --color-accent-pressed: var(--accent-pressed);
   --color-accent-ink: var(--accent-ink);
+  --color-magic: var(--magic);
   --color-line: var(--line);
   --color-line-strong: var(--line-strong);
   --color-transparent: transparent;
@@ -141,6 +159,7 @@
 body {
   background: var(--canvas);
   color: var(--ink);
+  overflow-x: clip; /* sparkles may fly past the edge; never cause sideways scroll */
 }
 
 /* ---------- Components that read layer-3 tokens ---------- */
@@ -216,6 +235,71 @@ body {
       }
     }
   }
+}
+
+/* ---------- Celebration (MuralMagic.tsx sets --magic-tap, --wand-duration, --magic-spill) ---------- */
+@layer components {
+  .mural-grid {
+    transition: box-shadow var(--duration-slow) var(--ease-out-soft);
+  }
+  .mural-grid[data-complete] {
+    box-shadow: var(--shadow-soft), var(--complete-glow);
+  }
+  /* Each tile flares after the tap, later the further it is from the centre */
+  .mural-grid[data-magic] .mural-tile {
+    animation: tile-shimmer var(--wave-duration) var(--ease-out-soft);
+    animation-delay: calc(var(--magic-tap) + var(--wave-distance) * var(--wave-step));
+  }
+
+  .magic-layer {
+    position: absolute;
+    inset: calc(var(--magic-spill) * -1);
+    z-index: 10;
+    pointer-events: none;
+  }
+  .magic-wand {
+    position: absolute;
+    /* the star tip sits at (12px, 12px) inside the SVG: put it on the centre */
+    left: calc(50% - 12px);
+    top: calc(50% - 12px);
+    width: 140px;
+    height: 140px;
+    transform-origin: 12px 12px;
+    opacity: 0;
+    filter: drop-shadow(0 12px 20px rgb(0 0 0 / 0.55));
+    animation: wand-swoop var(--wand-duration) var(--ease-out-soft) forwards;
+  }
+  .magic-ring {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: 40px;
+    height: 40px;
+    margin: -20px;
+    border-radius: 50%;
+    box-shadow: 0 0 0 2px var(--magic), 0 0 30px 8px var(--magic-glow);
+    opacity: 0;
+    animation: ring-burst 900ms var(--ease-out-soft) var(--magic-tap) forwards;
+  }
+}
+
+/* The tap happens at 70% of the swoop. MuralMagic.tsx uses the same 70%. */
+@keyframes wand-swoop {
+  0% { opacity: 0; transform: translate(220px, -260px) rotate(30deg); }
+  20% { opacity: 1; }
+  55% { transform: translate(36px, -36px) rotate(-4deg); }
+  70% { transform: translate(0, 0) rotate(-20deg); }
+  80% { opacity: 1; transform: translate(10px, -10px) rotate(-10deg); }
+  100% { opacity: 0; transform: translate(80px, -110px) rotate(15deg); }
+}
+@keyframes ring-burst {
+  0% { opacity: 1; transform: scale(0.2); }
+  100% { opacity: 0; transform: scale(9); }
+}
+@keyframes tile-shimmer {
+  0% { filter: none; }
+  35% { filter: brightness(1.55) saturate(1.3); box-shadow: 0 0 26px 3px var(--magic-glow); }
+  100% { filter: none; }
 }
 
 @keyframes tile-bloom {

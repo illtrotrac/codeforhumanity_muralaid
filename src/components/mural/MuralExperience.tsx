@@ -2,6 +2,8 @@
 
 import { useState, type ReactNode } from "react";
 import type { Mural as MuralData } from "@/data/sample-mural";
+import { MuralMagic, TAP_MS } from "@/components/magic/MuralMagic";
+import { playChime } from "@/lib/chime";
 import { Mural } from "./Mural";
 import { NeedPanel } from "./NeedPanel";
 
@@ -16,6 +18,7 @@ export function MuralExperience({ mural, children }: MuralExperienceProps) {
   const [tiles, setTiles] = useState(mural.tiles);
   const [selectedId, setSelectedId] = useState<number | null>(null);
   const [justRestoredId, setJustRestoredId] = useState<number | null>(null);
+  const [isCelebrating, setIsCelebrating] = useState(false);
 
   // Derived values: worked out from state on every render, never stored.
   const selectedTile = tiles.find((t) => t.id === selectedId) ?? null;
@@ -30,11 +33,30 @@ export function MuralExperience({ mural, children }: MuralExperienceProps) {
     );
     setSelectedId(null);
     setJustRestoredId(id);
+
+    // Was this the last locked tile? We decide here, inside the click, so the
+    // chime is allowed to play (browsers block sound that isn't from a click).
+    const lockedBefore = tiles.filter((t) => t.status === "locked");
+    if (lockedBefore.length === 1 && lockedBefore[0].id === id) {
+      setIsCelebrating(true);
+      playChime(TAP_MS / 1000);
+    }
+  }
+
+  // Demo helper: restore everything except the finale tile, so one live
+  // pledge on stage completes the mural.
+  function handleSkipToFinale() {
+    setTiles((prev) =>
+      prev.map((t) => ({ ...t, status: t.id === mural.finaleTileId ? "locked" : "restored" })),
+    );
+    setJustRestoredId(null);
+    setIsCelebrating(false);
   }
 
   function handleReset() {
     setTiles(mural.tiles);
     setJustRestoredId(null);
+    setIsCelebrating(false);
   }
 
   return (
@@ -68,21 +90,34 @@ export function MuralExperience({ mural, children }: MuralExperienceProps) {
           <p className="font-display text-title text-accent">The wall is whole again.</p>
         )}
 
-        <button
-          type="button"
-          onClick={handleReset}
-          className="self-start font-mono text-label uppercase text-ink-muted underline-offset-4 transition-colors duration-300 hover:text-ink hover:underline"
-        >
-          Reset demo
-        </button>
+        <div className="flex flex-wrap gap-x-6 gap-y-2">
+          <button
+            type="button"
+            onClick={handleSkipToFinale}
+            className="font-mono text-label uppercase text-ink-muted underline-offset-4 transition-colors duration-300 hover:text-ink hover:underline"
+          >
+            Skip to final tile
+          </button>
+          <button
+            type="button"
+            onClick={handleReset}
+            className="font-mono text-label uppercase text-ink-muted underline-offset-4 transition-colors duration-300 hover:text-ink hover:underline"
+          >
+            Reset demo
+          </button>
+        </div>
       </header>
 
       <Mural
         mural={mural}
         tiles={tiles}
         justRestoredId={justRestoredId}
+        isComplete={isComplete}
+        isCelebrating={isCelebrating}
         onSelectTile={setSelectedId}
-      />
+      >
+        {isCelebrating && <MuralMagic onDone={() => setIsCelebrating(false)} />}
+      </Mural>
 
       <NeedPanel
         tile={selectedTile}
@@ -92,8 +127,10 @@ export function MuralExperience({ mural, children }: MuralExperienceProps) {
 
       {/* Screen readers announce changes to this region out loud. */}
       <p aria-live="polite" className="sr-only">
-        {justRestoredId !== null &&
-          `Tile ${justRestoredId} restored. ${restored} of ${total} tiles restored.`}
+        {isComplete && justRestoredId !== null
+          ? "Mural complete! Every tile has its colour back."
+          : justRestoredId !== null &&
+            `Tile ${justRestoredId} restored. ${restored} of ${total} tiles restored.`}
       </p>
     </div>
   );
