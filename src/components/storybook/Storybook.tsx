@@ -49,6 +49,14 @@ export function Storybook({ murals }: StorybookProps) {
   const isFirst = index === 0;
   const isLast = index === murals.length - 1;
 
+  // Next keeps this page alive (hidden) while you're on a mural, and shows it
+  // again, state and all, when you come back. Without this, you'd return to
+  // a book frozen mid-dive. Effects are cleaned up when the page is hidden,
+  // so that's where we forget the dive.
+  useEffect(() => {
+    return () => setDivingInto(null);
+  }, []);
+
   // Load the current mural's page in the background, so diving in is instant.
   useEffect(() => {
     if (current) router.prefetch(`/murals/${current.slug}`);
