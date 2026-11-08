@@ -20,6 +20,8 @@ export type MuralTile = {
 };
 
 export type Mural = {
+  slug: string; // the mural's name in URLs, e.g. /murals/the-long-table
+  pageOrder: number; // its page in the storybook
   title: string;
   location: string;
   imageSrc: string;
@@ -71,6 +73,8 @@ function buildTiles(size: number): MuralTile[] {
 }
 
 export const sampleMural: Mural = {
+  slug: "the-long-table",
+  pageOrder: 1,
   title: "The Long Table",
   location: "Sample neighbourhood wall",
   imageSrc: "/mural/sample.jpg",
