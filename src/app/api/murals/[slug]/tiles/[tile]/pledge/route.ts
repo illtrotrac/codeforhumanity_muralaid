@@ -30,8 +30,8 @@ export async function POST(
   const result = pledgeTile(slug, tileNumber, checked.note);
   if (!result.ok) {
     if (result.reason === "not_found") return jsonError("That mural or tile doesn't exist.", 404);
-    if (result.reason === "reserved") return jsonError("Someone is paying for this tile right now.", 409);
-    return jsonError("Someone already funded this tile.", 409); // 409 Conflict
+    if (result.reason === "reserved") return jsonError("Someone is paying for this section right now.", 409);
+    return jsonError("Someone already funded this section.", 409); // 409 Conflict
   }
 
   // Tell every open browser, only AFTER the database has committed.

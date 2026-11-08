@@ -81,14 +81,14 @@ export function NeedForm({ tile, onSave }: NeedFormProps) {
     >
       <div className="flex flex-col gap-1">
         <p className="font-mono text-label uppercase text-ink-muted">
-          Tile {tile.id} · row {tile.row + 1}, column {tile.col + 1}
+          Section {tile.id}
         </p>
         <h2 id="need-form-title" className="font-display text-title text-ink-strong">
           {isFunded ? "Funded" : "Edit this need"}
         </h2>
         {isFunded && (
           <p className="text-ink-muted">
-            A neighbour already funded this tile, so its need can&apos;t change.
+            A neighbour already funded this section, so its need can&apos;t change.
           </p>
         )}
       </div>

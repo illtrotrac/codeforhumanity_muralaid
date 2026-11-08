@@ -31,7 +31,7 @@ async function AdminHome() {
           <p className="font-mono text-label uppercase text-ink-muted">
             Shelter admin · {admin.organisationName ?? "All organisations"}
           </p>
-          <h1 className="font-display text-title text-ink-strong">Choose a mural to manage</h1>
+          <h1 className="font-display text-title text-ink-strong">Choose a colouring page to manage</h1>
         </div>
         <p className="flex items-center gap-4 text-sm text-ink-muted">
           {admin.email}

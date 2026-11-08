@@ -12,7 +12,7 @@ export function SiteHeader() {
       >
         <Link
           href="/"
-          className="font-display text-xl font-semibold tracking-tight text-ink-strong"
+          className="font-display text-2xl text-ink-strong"
         >
           {/* The one word in colour is the brand idea in miniature */}
           <span className="italic text-accent">Colour</span> for Community

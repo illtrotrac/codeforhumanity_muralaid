@@ -24,8 +24,8 @@ export async function POST(
   const hold = reserveTile(slug, tileNumber, CHECKOUT_MINUTES);
   if (!hold.ok) {
     if (hold.reason === "not_found") return jsonError("That mural or tile doesn't exist.", 404);
-    if (hold.reason === "already_funded") return jsonError("Someone already funded this tile.", 409);
-    return jsonError("Someone is paying for this tile right now. Try another, or check back soon.", 409);
+    if (hold.reason === "already_funded") return jsonError("Someone already funded this section.", 409);
+    return jsonError("Someone is paying for this section right now. Try another, or check back soon.", 409);
   }
 
   // 2. Ask Stripe for a payment page. Where to send the donor afterwards is

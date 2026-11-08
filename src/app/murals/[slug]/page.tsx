@@ -63,8 +63,8 @@ async function MuralLoader({
         {mural.organisation.isVerified && <VerifiedBadge />}
       </div>
       <p className="max-w-[52ch] text-lg text-ink-muted">
-        {mural.organisation.tagline} Each tile is one of their real needs. Fund
-        one, and that part of the wall gets its colour back.
+        {mural.organisation.tagline} Each section of this page is one of their
+        real needs. Fund one, and watch it colour in.
       </p>
     </MuralExperience>
   );

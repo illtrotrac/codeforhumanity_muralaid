@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState, type CSSProperties, type MouseEvent } from "react";
 import type { MuralSummary } from "@/lib/types";
-import { OpenBook, type FlipDirection } from "./OpenBook";
+import { OpenBook } from "./OpenBook";
 
 // Where a card sits, by distance from the current page: 0 is the centre,
 // 1 is right beside it, 2 is at the edge. Further than 2 is hidden.
@@ -41,7 +41,6 @@ type StorybookProps = {
 export function Storybook({ murals }: StorybookProps) {
   const router = useRouter();
   const [index, setIndex] = useState(0);
-  const [flip, setFlip] = useState<{ id: number; direction: FlipDirection }>({ id: 0, direction: "next" });
   const [divingInto, setDivingInto] = useState<string | null>(null);
   const swipeStart = useRef<number | null>(null);
 
@@ -64,8 +63,7 @@ export function Storybook({ murals }: StorybookProps) {
 
   function goTo(next: number) {
     if (next === index || next < 0 || next >= murals.length || divingInto) return;
-    setFlip((f) => ({ id: f.id + 1, direction: next > index ? "next" : "prev" }));
-    setIndex(next);
+    setIndex(next); // the book sees the new index and turns its page
   }
 
   // Zoom the card out of the book, THEN change page. Ctrl/Cmd-click and
@@ -83,7 +81,7 @@ export function Storybook({ murals }: StorybookProps) {
   return (
     <section
       aria-roledescription="carousel"
-      aria-label="The book of murals"
+      aria-label="The book of colouring pages"
       className="story"
       data-diving={divingInto ? true : undefined}
       onKeyDown={(e) => {
@@ -115,18 +113,17 @@ export function Storybook({ murals }: StorybookProps) {
                 sizes="(min-width: 1024px) 460px, 70vw"
                 priority={Math.abs(offset) <= 1}
                 className="object-cover"
-                // The more of the mural is funded, the more colour the cover shows.
+                // The more of the page is funded, the more colour the cover shows.
                 style={{ filter: `grayscale(${(1 - progress).toFixed(2)})` }}
               />
               <div className="story-card-caption">
-                <p className="font-mono text-label uppercase text-ink-muted">
-                  Page {m.pageOrder} · {m.organisation.sector}
-                </p>
-                <h2 className="font-display text-2xl leading-tight tracking-tight text-ink-strong">
-                  {m.title}
-                </h2>
-                <p className="text-sm text-ink">{m.organisation.name}</p>
-                <div className="mt-1 h-1 overflow-hidden rounded-pill bg-surface-raised">
+                <div className="flex items-baseline justify-between gap-3">
+                  <h2 className="font-display text-2xl leading-tight text-ink-strong">{m.title}</h2>
+                  <p className="shrink-0 font-mono text-label text-ink-muted tabular-nums">
+                    {Math.round(progress * 100)}%
+                  </p>
+                </div>
+                <div className="h-1 overflow-hidden rounded-pill bg-surface-raised">
                   <div className="h-full rounded-pill bg-accent" style={{ width: `${progress * 100}%` }} />
                 </div>
               </div>
@@ -152,7 +149,7 @@ export function Storybook({ murals }: StorybookProps) {
                   >
                     {face}
                     <span className="sr-only">
-                      Open {m.title}, {m.restoredTiles} of {m.totalTiles} tiles restored
+                      Open {m.title}, {m.restoredTiles} of {m.totalTiles} sections coloured in
                     </span>
                   </Link>
                 ) : (
@@ -187,10 +184,12 @@ export function Storybook({ murals }: StorybookProps) {
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5l7 7-7 7" /></svg>
       </button>
 
-      <OpenBook flipId={flip.id} direction={flip.direction} />
+      {/* Dragging the book's pages moves the cards too. setIndex never
+          changes identity, so the memoised book doesn't re-render for it. */}
+      <OpenBook murals={murals} spread={index} onTurn={setIndex} />
 
-      <p className="mt-6 text-center font-mono text-label uppercase text-ink-muted tabular-nums">
-        Page {index + 1} of {murals.length}
+      <p className="text-center font-mono text-label uppercase text-ink-muted tabular-nums">
+        Page {index + 1} of {murals.length} · tap the page to open it
       </p>
       {/* Announces each page turn to screen readers. */}
       <p aria-live="polite" className="sr-only">

@@ -44,7 +44,7 @@ export async function MuralShelf({ basePath, organisationSlug }: MuralShelfProps
                 <h2 className="font-display text-2xl tracking-tight text-ink-strong">{m.title}</h2>
                 <p className="text-sm text-ink">{m.organisation.name}</p>
                 <p className="text-sm text-ink-muted">
-                  {m.restoredTiles} of {m.totalTiles} tiles restored · {percent}%
+                  {m.restoredTiles} of {m.totalTiles} sections coloured in · {percent}%
                 </p>
               </div>
             </Link>

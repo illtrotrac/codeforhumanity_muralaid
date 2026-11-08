@@ -17,7 +17,7 @@ function clean(value: unknown): string | null {
   return tidy === "" ? null : tidy;
 }
 
-// Notes appear publicly on the wall, so links are refused: they're the
+// Notes appear publicly on the page, so links are refused: they're the
 // main way spam gets in.
 const LINK = /(https?:\/\/|www\.|\.(com|net|org|io|ly)\b)/i;
 

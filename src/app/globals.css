@@ -1,7 +1,7 @@
 @import "tailwindcss";
 
 /*
- * MuralAid design tokens, in three layers:
+ * Colour for Community design tokens, in three layers:
  *
  *   1. Primitives  - raw values (hex codes, sizes). Named for WHAT they are.
  *   2. Semantic    - roles in the UI (canvas, ink, accent). Named for WHAT THEY DO.
@@ -13,80 +13,85 @@
 
 /* ---------- Layer 1: primitives ---------- */
 :root {
-  /* Charcoal: warm near-blacks, from deepest to lightest */
-  --charcoal-950: #0e0d0c;
-  --charcoal-900: #151311;
-  --charcoal-800: #211e1b;
-  --charcoal-700: #2e2a26;
-  --charcoal-600: #3d3833;
-  --charcoal-400: #9b938a;
+  /* Linen: the warm paper "desk" the whole site sits on, light to deep */
+  --linen-50: #fbf6ea;
+  --linen-100: #f5ecd8;
+  --linen-200: #ece0c4;
+  --linen-300: #dfcfab;
 
-  /* Paper: warm off-whites */
-  --paper-100: #ede8e0;
-  --paper-50: #f7f4ef;
+  /* Sepia: brown-black inks, like an old printed storybook */
+  --sepia-950: #24170c;
+  --sepia-900: #3b2a1a;
+  --sepia-600: #6e5842;
+  --sepia-500: #8a735a;
 
-  /* Vermilion: our one accent colour */
-  --vermilion-400: #f06e57;
-  --vermilion-500: #e8553d;
-  --vermilion-600: #c9412b;
-  --vermilion-50: #fff6f1;
+  /* Paper: the crisp white colouring pages */
+  --paper-50: #fffcf5;
+
+  /* Storybook red: deep enough that white text on it passes WCAG AA */
+  --red-500: #b53a24;
+  --red-600: #9c2f1c;
+  --red-700: #82261a;
+  --red-50: #fff6ee;
 
   /* Gold: magic moments, and the storybook's gilt page edges */
   --gold-200: #fbe7b5;
   --gold-400: #e9b949;
 
-  /* Oxblood: a deep leather red, vermilion's darker cousin, for the book cover */
-  --oxblood-900: #2a100b;
-  --oxblood-700: #4a1c14;
+  /* Parchment and leather: the storybook's pages and cover */
+  --parchment-100: #f3e3b8;
+  --parchment-300: #d9c08a;
+  --leather-700: #5c2a1d;
+  --leather-900: #321409;
 }
 
 /* ---------- Layer 2: semantic roles ---------- */
 :root {
-  color-scheme: dark;
+  color-scheme: light;
 
   /* Surfaces, from back to front */
-  --canvas: var(--charcoal-900);
-  --surface: var(--charcoal-800);
-  --surface-raised: var(--charcoal-700);
-  --glass: rgb(33 30 27 / 0.62);
-  --scrim: rgb(14 13 12 / 0.55); /* dims the page behind a dialog */
+  --canvas: var(--linen-100);
+  --surface: var(--linen-50);
+  --surface-raised: var(--linen-200);
+  --glass: rgb(251 246 234 / 0.78);
+  --scrim: rgb(36 23 12 / 0.38); /* dims the page behind a dialog */
 
   /* Text */
-  --ink: var(--paper-100);
-  --ink-strong: var(--paper-50);
-  --ink-muted: var(--charcoal-400);
+  --ink: var(--sepia-900);
+  --ink-strong: var(--sepia-950);
+  --ink-muted: var(--sepia-600);
 
   /* Interaction */
-  --accent: var(--vermilion-500);
-  --accent-hover: var(--vermilion-400);
-  --accent-pressed: var(--vermilion-600);
-  --accent-ink: var(--vermilion-50);
+  --accent: var(--red-500);
+  --accent-hover: var(--red-600);
+  --accent-pressed: var(--red-700);
+  --accent-ink: var(--red-50);
 
   /* Feedback. Same hue family as the accent, but its own role. */
-  --danger: var(--vermilion-400);
+  --danger: var(--red-600);
 
   /* Magic: the completion moment */
   --magic: var(--gold-200);
-  --magic-glow: rgb(233 185 73 / 0.55);
-  --sparkle-1: var(--gold-200);
-  --sparkle-2: var(--paper-50);
-  --sparkle-3: var(--vermilion-400);
-  --sparkle-4: var(--gold-400);
+  --magic-glow: rgb(233 185 73 / 0.6);
+  --sparkle-1: var(--gold-400);
+  --sparkle-2: var(--gold-200);
+  --sparkle-3: var(--red-500);
+  --sparkle-4: #d4a017;
 
   /* The storybook */
-  --book-cover: var(--oxblood-700);
-  --book-cover-deep: var(--oxblood-900);
-  --book-page: var(--paper-100);
-  --book-page-light: var(--paper-50);
-  --book-page-shade: #d6c8b2; /* paper in shadow, where pages curve into the spine (opaque, so the cover never shows through) */
-  --book-line: rgb(120 96 70 / 0.16); /* faint ruled lines on the pages */
-  --book-edge: var(--gold-400); /* gilt page edges */
-  --book-ribbon: var(--vermilion-500);
-  --book-glow: rgb(251 231 181 / 0.55);
+  --book-page: var(--paper-50); /* the colouring pages' paper */
+  --book-leaf: var(--parchment-100); /* the storybook's pages */
+  --book-leaf-shade: var(--parchment-300); /* ...darker toward the spine */
+  --book-cover: var(--leather-700);
+  --book-cover-deep: var(--leather-900);
+  --book-ink: var(--sepia-900);
+  --book-ribbon: var(--red-500); /* the little ornament */
+  --book-edge: var(--gold-400); /* gilt edges on the floating cards */
+  --book-glow: rgb(233 185 73 / 0.35);
 
   /* Hairlines instead of thick borders */
-  --line: rgb(237 232 224 / 0.08);
-  --line-strong: rgb(237 232 224 / 0.16);
+  --line: rgb(59 42 26 / 0.1);
+  --line-strong: rgb(59 42 26 / 0.2);
 
   /* Motion */
   --duration-fast: 150ms;
@@ -97,17 +102,17 @@
 /* ---------- Layer 3: component tokens ---------- */
 :root {
   /* Colouring page */
-  --page-pencil: rgb(46 42 38 / 0.28); /* the faint lines between regions */
+  --page-pencil: rgb(59 42 26 / 0.28); /* the faint lines between sections */
   --page-pencil-width: 1px;
-  --region-hover: rgb(232 85 61 / 0.22); /* a vermilion wash over the region you point at */
+  --region-hover: rgb(181 58 36 / 0.2); /* a red wash over the section you point at */
   --region-selected: var(--accent);
   --crayon-duration: 1.1s; /* how long colouring in one region takes */
 
   /* Form fields */
-  --field-bg: var(--canvas);
+  --field-bg: var(--paper-50);
   --field-radius: 12px;
   --field-ring: inset 0 0 0 1px var(--line-strong);
-  --field-ring-focus: inset 0 0 0 1px var(--accent), 0 0 0 4px rgb(232 85 61 / 0.18);
+  --field-ring-focus: inset 0 0 0 1px var(--accent), 0 0 0 4px rgb(181 58 36 / 0.16);
   --field-ring-invalid: inset 0 0 0 1px var(--danger);
 
   /* Need panel */
@@ -115,12 +120,15 @@
   --panel-blur: 24px;
 
   /* Storybook carousel */
-  --story-card-w: clamp(220px, min(34vw, 44dvh), 460px); /* limited by width AND height, so book + cards fit one screen */
+  --story-card-w: clamp(220px, min(34vw, 40dvh), 460px); /* limited by width AND height, so book + cards fit one screen */
   --story-move: 750ms; /* how long cards take to slide to their new place */
   --story-flip: 900ms; /* how long one page takes to turn */
   --story-dive: 650ms; /* the zoom into a mural before the page changes */
-  --book-w: min(calc(var(--story-card-w) * 1.7), 92vw); /* scales with the cards */
-  --book-tilt: 72deg; /* how far the book lies back, as if on a table */
+  --book-w: min(calc(var(--story-card-w) * 1.45), 92vw); /* scales with the cards */
+
+  /* The wand */
+  --wand-wood: #8a3a1f;
+  --wand-shine: rgb(255 220 190 / 0.45);
 
   /* Celebration: the light wave ripples out from the wand's tap point */
   --wave-step: 110ms; /* delay per tile-width of distance from the centre */
@@ -158,38 +166,46 @@
   --color-line-strong: var(--line-strong);
   --color-transparent: transparent;
 
-  --font-display: var(--font-fraunces), Georgia, "Times New Roman", serif;
-  --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
-  --font-mono: var(--font-geist-mono), ui-monospace, monospace;
+  /* Storybook type: IM Fell (cut from 1600s printing types) for headings,
+     its small-caps cut for labels, and Lora, a warm book serif, for reading.
+     The "mono" slot is reused for labels, so existing label classes follow. */
+  --font-display: var(--font-fell), "Iowan Old Style", Georgia, serif;
+  --font-sans: var(--font-lora), Georgia, "Times New Roman", serif;
+  --font-mono: var(--font-fell-sc), "Iowan Old Style", Georgia, serif;
 }
 
 /* Static tokens: no runtime switching needed, so plain @theme */
 @theme {
   /* Type scale: each size carries its own line-height and tracking */
   --text-display: clamp(2.75rem, 6vw, 5rem);
-  --text-display--line-height: 1;
-  --text-display--letter-spacing: -0.035em;
+  --text-display--line-height: 1.02;
+  --text-display--letter-spacing: -0.01em; /* old-style type wants room, not tight tracking */
   --text-title: clamp(1.75rem, 3vw, 2.5rem);
-  --text-title--line-height: 1.1;
-  --text-title--letter-spacing: -0.025em;
-  --text-label: 0.6875rem;
-  --text-label--line-height: 1.2;
-  --text-label--letter-spacing: 0.14em;
+  --text-title--line-height: 1.12;
+  --text-title--letter-spacing: -0.005em;
+  --text-label: 0.8rem;
+  --text-label--line-height: 1.25;
+  --text-label--letter-spacing: 0.08em;
 
   --radius-tile: 6px;
   --radius-panel: 22px;
   --radius-pill: 999px;
 
   /* Soft, high-diffusion shadows, plus an accent glow for hover */
-  --shadow-soft: 0 30px 60px -30px rgb(0 0 0 / 0.55), 0 2px 6px rgb(0 0 0 / 0.12);
-  --shadow-lift: 0 40px 80px -30px rgb(0 0 0 / 0.65), 0 4px 12px rgb(0 0 0 / 0.16);
-  --shadow-glow: 0 14px 34px -12px rgb(232 85 61 / 0.7);
+  /* Warm brown shadows: grey shadows look dirty on paper */
+  --shadow-soft: 0 24px 48px -28px rgb(70 45 20 / 0.35), 0 2px 6px rgb(70 45 20 / 0.08);
+  --shadow-lift: 0 34px 64px -28px rgb(70 45 20 / 0.42), 0 4px 12px rgb(70 45 20 / 0.1);
+  --shadow-glow: 0 14px 30px -12px rgb(181 58 36 / 0.55);
 
   --ease-out-soft: cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 body {
-  background: var(--canvas);
+  /* Linen with soft light pools, so the "desk" doesn't look like flat beige */
+  background:
+    radial-gradient(ellipse 80% 50% at 50% 0%, var(--linen-50), transparent 70%),
+    radial-gradient(ellipse 60% 40% at 50% 100%, var(--linen-200), transparent 70%),
+    var(--canvas);
   color: var(--ink);
   overflow-x: clip; /* sparkles may fly past the edge; never cause sideways scroll */
 }
@@ -401,8 +417,8 @@ body {
     inset: auto 0 0;
     display: flex;
     flex-direction: column;
-    gap: 0.25rem;
-    padding: 1rem 1.25rem 1.1rem;
+    gap: 0.4rem;
+    padding: 0.7rem 1rem 0.8rem;
     background: var(--glass);
     backdrop-filter: blur(var(--panel-blur));
   }
@@ -454,85 +470,73 @@ body {
     position: relative;
     z-index: 0; /* behind the cards: the murals float up in front of it */
     width: var(--book-w);
-    height: calc(var(--book-w) * 0.2);
-    margin-top: calc(var(--story-card-w) * -0.1);
-    perspective: 1600px;
-    perspective-origin: 50% -40%;
-    pointer-events: none;
+    margin-top: calc(var(--story-card-w) * -0.08);
     transition:
       transform var(--story-dive) var(--ease-out-soft),
       opacity var(--story-dive) var(--ease-out-soft);
   }
-  /* The book lies back like it's resting on a table */
-  .book-body {
-    position: absolute;
-    inset: auto 0 0;
-    height: calc(var(--book-w) * 0.5);
-    transform-origin: 50% 100%;
-    transform: rotateX(var(--book-tilt));
-    transform-style: preserve-3d;
-  }
-  .book-cover {
-    position: absolute;
-    inset: -2.5% -1.8%;
-    border-radius: 12px;
-    background: linear-gradient(160deg, var(--book-cover), var(--book-cover-deep));
-    transform: translateZ(-10px);
-    box-shadow: 0 60px 80px -20px rgb(0 0 0 / 0.75);
-  }
-  /* Each page: faint "text lines" inside a margin, over a gradient that
-     darkens towards the spine where the paper curves down */
-  .book-page,
-  .book-leaf {
-    position: absolute;
-    top: 0;
-    bottom: 0;
-    width: 50%;
-    padding: 9% 7%;
-    background-clip: content-box, border-box;
-    box-shadow: 0 0 0 1px rgb(233 185 73 / 0.5), 0 7px 0 -1px var(--book-edge);
-  }
-  .book-page-left,
-  .book-leaf[data-direction="prev"] {
-    left: 0;
-    border-radius: 8px 2px 2px 8px;
-    transform-origin: 100% 50%;
-    background-image:
-      repeating-linear-gradient(to bottom, transparent 0 13px, var(--book-line) 13px 14px),
-      linear-gradient(to right, var(--book-page-light), var(--book-page) 85%, var(--book-page-shade));
-  }
-  .book-page-right,
-  .book-leaf[data-direction="next"] {
-    right: 0;
-    border-radius: 2px 8px 8px 2px;
-    transform-origin: 0% 50%;
-    background-image:
-      repeating-linear-gradient(to bottom, transparent 0 13px, var(--book-line) 13px 14px),
-      linear-gradient(to left, var(--book-page-light), var(--book-page) 85%, var(--book-page-shade));
-  }
-  /* The outer edges lift slightly, giving the open-book "V" from the sketch */
-  .book-page-left { transform: rotateY(7deg); }
-  .book-page-right { transform: rotateY(-7deg); }
-
-  /* The turning page: lifts off one side and lands on the other */
-  .book-leaf {
-    z-index: 2;
-    backface-visibility: visible;
-    animation: leaf-turn-next var(--story-flip) var(--ease-out-soft) forwards;
-  }
-  .book-leaf[data-direction="prev"] {
-    animation-name: leaf-turn-prev;
+  /* The leather cover peeking out around the pages */
+  .book-host {
+    position: relative;
+    padding: 10px 12px 14px;
+    border-radius: 14px;
+    background: linear-gradient(170deg, var(--book-cover), var(--book-cover-deep));
+    box-shadow: 0 40px 60px -24px rgb(0 0 0 / 0.75), inset 0 1px 0 rgb(255 255 255 / 0.08);
   }
 
-  .book-ribbon {
-    position: absolute;
-    left: 51.5%;
-    bottom: -2.6rem;
-    width: 0.9rem;
-    height: 3.2rem;
-    background: linear-gradient(to bottom, var(--book-ribbon), var(--accent-pressed));
-    clip-path: polygon(0 0, 100% 0, 100% 100%, 50% 80%, 0 100%);
-    filter: drop-shadow(0 6px 6px rgb(0 0 0 / 0.5));
+  /* Pages, as copied into the book by OpenBook.tsx */
+  .book-sheet {
+    overflow: hidden;
+    color: var(--book-ink);
+    background: var(--book-leaf);
+  }
+  /* Paper darkens where it curves down into the spine */
+  .book-sheet-left {
+    background: linear-gradient(to right, var(--book-leaf) 70%, var(--book-leaf-shade));
+  }
+  .book-sheet-right {
+    background: linear-gradient(to left, var(--book-leaf) 70%, var(--book-leaf-shade));
+  }
+  .book-sheet-inner {
+    display: flex;
+    height: 100%;
+    flex-direction: column;
+    align-items: center;
+    justify-content: safe center; /* centre, but never push the top line out of view */
+    gap: 0.15em;
+    padding: 5% 8%;
+    text-align: center;
+  }
+  .book-sheet-kicker {
+    font-family: var(--font-mono);
+    font-size: clamp(0.45rem, 0.75vw, 0.62rem);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    opacity: 0.7;
+  }
+  .book-sheet-title {
+    font-family: var(--font-display);
+    font-size: clamp(0.85rem, 1.7vw, 1.4rem);
+    font-style: italic;
+    line-height: 1.1;
+    text-wrap: balance;
+  }
+  .book-sheet-ornament {
+    color: var(--book-ribbon);
+    font-size: clamp(0.8rem, 1.4vw, 1.1rem);
+  }
+  .book-sheet-body {
+    font-size: clamp(0.55rem, 0.9vw, 0.78rem);
+    line-height: 1.3;
+  }
+  /* The colouring page, printed onto the right-hand sheet */
+  .book-sheet-art {
+    display: block;
+    width: 84%;
+    height: 84%;
+    margin: 8%;
+    object-fit: contain;
+    mix-blend-mode: multiply; /* ink on paper: the white of the line art disappears */
   }
 
   /* Light rising from the spine, and dust drifting up through it */
@@ -545,7 +549,6 @@ body {
     translate: -50% 0;
     background: radial-gradient(ellipse at 50% 100%, var(--book-glow), transparent 62%);
     filter: blur(12px);
-    mix-blend-mode: screen;
     animation: glow-breathe 5s ease-in-out infinite;
   }
   .book-dust {
@@ -590,18 +593,6 @@ body {
 @keyframes card-float {
   0%, 100% { transform: translateY(0); }
   50% { transform: translateY(-10px); }
-}
-@keyframes leaf-turn-next {
-  0% { transform: translateZ(1px) rotateY(-7deg); filter: brightness(1); }
-  50% { filter: brightness(0.82); }
-  90% { opacity: 1; }
-  100% { transform: translateZ(1px) rotateY(-173deg); filter: brightness(1); opacity: 0; }
-}
-@keyframes leaf-turn-prev {
-  0% { transform: translateZ(1px) rotateY(7deg); filter: brightness(1); }
-  50% { filter: brightness(0.82); }
-  90% { opacity: 1; }
-  100% { transform: translateZ(1px) rotateY(173deg); filter: brightness(1); opacity: 0; }
 }
 @keyframes glow-breathe {
   0%, 100% { opacity: 0.75; }
@@ -674,6 +665,20 @@ body {
     opacity: 0;
     filter: drop-shadow(0 12px 20px rgb(0 0 0 / 0.55));
     animation: wand-swoop var(--wand-duration) var(--ease-out-soft) forwards;
+  }
+  .wand-wood {
+    fill: var(--wand-wood);
+  }
+  .wand-shine {
+    stroke: var(--wand-shine);
+    stroke-width: 1.5;
+    stroke-linecap: round;
+  }
+  .wand-band {
+    fill: var(--gold-400);
+  }
+  .wand-sparkles path {
+    fill: var(--gold-400);
   }
   .magic-ring {
     position: absolute;

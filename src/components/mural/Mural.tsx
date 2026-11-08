@@ -65,9 +65,9 @@ export function Mural({
 
   function regionLabel(region: Region) {
     const tile = tileById.get(region.id);
-    if (!tile) return `Region ${region.id}`;
+    if (!tile) return `Section ${region.id}`;
     const status = tile.status === "restored" ? "coloured in" : "waiting for support";
-    return `Region ${region.id}: ${tile.need.title}, $${tile.need.amount}, ${status}`;
+    return `Section ${region.id}: ${tile.need.title}, $${tile.need.amount}, ${status}`;
   }
 
   function onKey(event: KeyboardEvent, id: number) {
@@ -89,7 +89,7 @@ export function Mural({
           <svg
             viewBox={`0 0 ${cols} ${rows}`}
             role="group"
-            aria-label={`${mural.title}, a colouring page with ${regions.length} regions`}
+            aria-label={`${mural.title}, a colouring page with ${regions.length} sections`}
             className="block size-full"
           >
             <defs>
@@ -177,7 +177,7 @@ export function Mural({
         <span className="sr-only">{mural.imageAlt}</span>
         {mural.isAiSample && (
           <span className="font-mono text-label uppercase text-ink-muted">
-            AI-generated sample artwork · real murals are commissioned from local artists
+            AI-generated sample artwork · real pages are drawn by local artists
           </span>
         )}
       </figcaption>

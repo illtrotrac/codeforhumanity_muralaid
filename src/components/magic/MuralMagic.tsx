@@ -56,17 +56,35 @@ export function MuralMagic({ onDone }: MuralMagicProps) {
     <div className="magic-layer" style={timing} aria-hidden="true">
       <canvas ref={canvasRef} className="absolute inset-0 size-full" />
       <span className="magic-ring" />
-      <svg className="magic-wand" viewBox="0 0 140 140">
-        <defs>
-          <linearGradient id="wand-shaft" x1="0" y1="0" x2="1" y2="1">
-            <stop offset="0" style={{ stopColor: "var(--ink-strong)" }} />
-            <stop offset="1" style={{ stopColor: "var(--surface-raised)" }} />
-          </linearGradient>
-        </defs>
-        <line x1="22" y1="22" x2="130" y2="130" stroke="url(#wand-shaft)" strokeWidth="6" strokeLinecap="round" />
-        {/* The star tip, centred on (12, 12) */}
-        <path className="fill-magic" d="M12 0 L15 9 L24 12 L15 15 L12 24 L9 15 L0 12 L9 9 Z" />
-      </svg>
+      <Wand />
     </div>
+  );
+}
+
+// A four-pointed sparkle with curved sides, centred on (cx, cy).
+function sparkle(cx: number, cy: number, r: number) {
+  return `M${cx} ${cy - r}Q${cx} ${cy} ${cx + r} ${cy}Q${cx} ${cy} ${cx} ${cy + r}Q${cx} ${cy} ${cx - r} ${cy}Q${cx} ${cy} ${cx} ${cy - r}Z`;
+}
+
+// Our own wand, drawn in SVG: a tapered wooden handle with a gold band and
+// a spray of sparkles. The tip sits at (12, 12), where the CSS expects it.
+function Wand() {
+  return (
+    <svg className="magic-wand" viewBox="0 0 140 140">
+      {/* Sparkles trailing from the tip */}
+      <g className="wand-sparkles">
+        <path d={sparkle(12, 12, 9)} />
+        <path d={sparkle(30, 4, 4)} />
+        <path d={sparkle(4, 32, 4.5)} />
+        <path d={sparkle(34, 26, 3)} />
+        <path d={sparkle(22, 40, 2.5)} />
+      </g>
+      {/* The handle: thin at the tip, fattening toward a rounded end */}
+      <path className="wand-wood" d="M16 18 L20 14 L124 118 Q136 128 130 134 Q124 140 114 128 Z" />
+      {/* A highlight along one edge, so it reads as round, not flat */}
+      <path className="wand-shine" d="M19 15.5 L121 117.5" />
+      {/* The gold band where your hand would hold it */}
+      <path className="wand-band" d="M98 96 L104 90 L112 98 L106 104 Z" />
+    </svg>
   );
 }

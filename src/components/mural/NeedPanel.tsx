@@ -56,7 +56,7 @@ export function NeedPanel({
         <div className="flex h-full flex-col gap-8 p-8">
           <div className="flex items-start justify-between gap-4">
             <p className="font-mono text-label uppercase text-ink-muted">
-              Tile {tile.id} · ${tile.need.amount}
+              Section {tile.id} · ${tile.need.amount}
             </p>
             <button
               type="button"
@@ -215,8 +215,8 @@ function PledgeForm({ tile, paymentMode, canDemoPledge, onPledge, onCheckout }: 
 
       <p className="text-center text-sm text-ink-muted">
         {paymentMode === "stripe"
-          ? "Test mode: use card 4242 4242 4242 4242. Notes appear publicly on the wall."
-          : "Demo only. No real payment is taken. Notes appear publicly on the wall."}
+          ? "Test mode: use card 4242 4242 4242 4242. Notes appear publicly on the page."
+          : "Demo only. No real payment is taken. Notes appear publicly on the page."}
       </p>
     </form>
   );
@@ -233,7 +233,7 @@ function FundedNote({ note }: { note: DonorNote | null }) {
         </blockquote>
       )}
       <figcaption className="text-sm text-ink-muted">
-        <span className="text-ink">{who}</span> coloured this part of the wall back in.
+        <span className="text-ink">{who}</span> coloured this section in.
       </figcaption>
     </figure>
   );

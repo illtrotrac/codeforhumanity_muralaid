@@ -127,7 +127,8 @@ export function runSparkles(canvas: HTMLCanvasElement, options: SparkleOptions):
     if (twinkling) for (let i = 0; i < 3; i++) spawnTwinkle();
 
     ctx!.clearRect(0, 0, width, height);
-    ctx!.globalCompositeOperation = "lighter"; // overlapping stars add up to brighter light
+    // Normal painting: "lighter" (adding light) only shows up on dark pages.
+    ctx!.globalCompositeOperation = "source-over";
 
     // Loop backwards so removing a dead particle doesn't skip the next one.
     for (let i = particles.length - 1; i >= 0; i--) {

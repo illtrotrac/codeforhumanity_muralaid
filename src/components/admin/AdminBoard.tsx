@@ -24,11 +24,11 @@ export function AdminBoard({ mural: initialMural }: { mural: MuralData }) {
         <h1 className="font-display text-title text-ink-strong">{mural.title}</h1>
         <dl className="flex flex-wrap gap-x-10 gap-y-3">
           <div>
-            <dt className="text-sm text-ink-muted">Tiles waiting</dt>
+            <dt className="text-sm text-ink-muted">Sections waiting</dt>
             <dd className="font-display text-title text-ink-strong tabular-nums">{locked.length}</dd>
           </div>
           <div>
-            <dt className="text-sm text-ink-muted">Tiles funded</dt>
+            <dt className="text-sm text-ink-muted">Sections funded</dt>
             <dd className="font-display text-title text-ink-strong tabular-nums">
               {tiles.length - locked.length}
             </dd>

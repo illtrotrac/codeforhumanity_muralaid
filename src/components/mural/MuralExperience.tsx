@@ -12,8 +12,8 @@ import { useMuralState } from "./useMuralState";
 const TICKER_LENGTH = 5;
 
 const PAYMENT_NOTICES = {
-  cancelled: "Payment cancelled. Nothing was charged, and the region is free again.",
-  refunded: "Someone funded that region just before you, so we've refunded your payment in full.",
+  cancelled: "Payment cancelled. Nothing was charged, and the section is free again.",
+  refunded: "Someone funded that section just before you, so we've refunded your payment in full.",
 } as const;
 
 type MuralExperienceProps = {
@@ -82,6 +82,16 @@ export function MuralExperience({
     void pledge(id, note); // starts the request; the tile is coloured immediately
   }
 
+  // Replay is a click, so the chime is allowed to play this time.
+  function handleReplay() {
+    setIsCelebrating(false);
+    // Next frame: remounting the celebration restarts all its animations.
+    requestAnimationFrame(() => {
+      setIsCelebrating(true);
+      playChime(TAP_MS / 1000);
+    });
+  }
+
   function handleDemo(action: "reset" | "skip-to-finale") {
     setJustRestoredId(null);
     setIsCelebrating(false);
@@ -108,7 +118,7 @@ export function MuralExperience({
               <span className="font-display text-title text-ink-strong tabular-nums">
                 {restored}
               </span>{" "}
-              <span className="text-ink-muted">of {total} tiles restored</span>
+              <span className="text-ink-muted">of {total} sections coloured in</span>
             </p>
             <p className="flex items-center gap-2 font-mono text-label uppercase text-ink-muted">
               <span aria-hidden="true" className="live-dot" data-live={isLive || undefined} />
@@ -131,7 +141,37 @@ export function MuralExperience({
         </div>
 
         {isComplete && (
-          <p className="font-display text-title text-accent">The wall is whole again.</p>
+          // A finished page shouldn't be a dead end: let people relive the
+          // moment, and let admins start the page over.
+          <section
+            aria-labelledby="complete-title"
+            className="flex flex-col gap-3 rounded-panel bg-surface p-5 shadow-soft"
+          >
+            <h2 id="complete-title" className="font-display text-title text-accent">
+              Every section is coloured in!
+            </h2>
+            <p className="text-ink-muted">
+              Thank you to everyone who helped {mural.organisation.name} finish this page.
+            </p>
+            <div className="flex flex-wrap gap-3">
+              <button
+                type="button"
+                onClick={handleReplay}
+                className="rounded-pill bg-accent px-5 py-2.5 font-semibold text-accent-ink transition-all duration-300 ease-out-soft hover:-translate-y-0.5 hover:bg-accent-hover hover:shadow-glow"
+              >
+                Replay the celebration
+              </button>
+              {canRunDemo && (
+                <button
+                  type="button"
+                  onClick={() => handleDemo("reset")}
+                  className="rounded-pill px-5 py-2.5 font-semibold text-ink ring-1 ring-line-strong transition-all duration-300 ease-out-soft hover:ring-ink"
+                >
+                  Reset this page
+                </button>
+              )}
+            </div>
+          </section>
         )}
 
         <KindnessTicker pledges={pledges} />
@@ -148,21 +188,21 @@ export function MuralExperience({
           </p>
         )}
 
-        {canRunDemo && (
+        {canRunDemo && !isComplete && (
           <div className="flex flex-wrap gap-x-6 gap-y-2">
             <button
               type="button"
               onClick={() => handleDemo("skip-to-finale")}
               className="font-mono text-label uppercase text-ink-muted underline-offset-4 transition-colors duration-300 hover:text-ink hover:underline"
             >
-              Skip to final tile
+              Skip to the last section
             </button>
             <button
               type="button"
               onClick={() => handleDemo("reset")}
               className="font-mono text-label uppercase text-ink-muted underline-offset-4 transition-colors duration-300 hover:text-ink hover:underline"
             >
-              Reset demo
+              Reset this page
             </button>
           </div>
         )}
@@ -192,9 +232,9 @@ export function MuralExperience({
       {/* Screen readers announce changes to this region out loud. */}
       <p aria-live="polite" className="sr-only">
         {isComplete && justRestoredId !== null
-          ? "Mural complete! Every tile has its colour back."
+          ? "Page complete! Every section is coloured in."
           : justRestoredId !== null &&
-            `Tile ${justRestoredId} restored. ${restored} of ${total} tiles restored.`}
+            `Section ${justRestoredId} coloured in. ${restored} of ${total} sections done.`}
       </p>
     </div>
   );
