@@ -1,4 +1,4 @@
-import type { DemoAction, Mural, MuralTile, Need } from "./types";
+import type { DemoAction, DonorNote, Mural, MuralTile, Need } from "./types";
 import type { NeedErrors } from "./need-validation";
 
 // The browser's side of the API: one function per endpoint, so components
@@ -31,9 +31,11 @@ const json = { "Content-Type": "application/json" };
 export const muralApi = {
   get: (slug: string) => request<Mural>(base(slug), { cache: "no-store" }),
 
-  pledge: (slug: string, tileId: number) =>
+  pledge: (slug: string, tileId: number, note: DonorNote) =>
     request<{ tile: MuralTile; completed: boolean }>(`${base(slug)}/tiles/${tileId}/pledge`, {
       method: "POST",
+      headers: json,
+      body: JSON.stringify(note),
     }),
 
   saveNeed: (slug: string, tileId: number, need: Need) =>

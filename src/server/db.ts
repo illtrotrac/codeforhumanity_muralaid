@@ -103,6 +103,13 @@ const MIGRATIONS = [
   -- NULL means the finale tile is just an ordinary region.
   ALTER TABLE murals ADD COLUMN finale_shape TEXT;
   `,
+
+  /* v5: an optional name and note from the donor */ `
+  -- Both optional: NULL name = anonymous, NULL message = no note.
+  -- The CHECKs repeat the app's limits, so bad data can't sneak in another way.
+  ALTER TABLE pledges ADD COLUMN donor_name TEXT CHECK (length(donor_name) <= 40);
+  ALTER TABLE pledges ADD COLUMN message    TEXT CHECK (length(message) <= 140);
+  `,
 ];
 
 function migrate(db: DatabaseSync) {

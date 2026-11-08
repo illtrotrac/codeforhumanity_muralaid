@@ -10,12 +10,19 @@ export type Need = {
   amount: number;
 };
 
+// What a donor chose to leave on the region they funded. Both optional.
+export type DonorNote = {
+  donorName: string | null; // null = anonymous
+  message: string | null;
+};
+
 export type MuralTile = {
   id: number; // 1-based, counted left-to-right, top-to-bottom
   row: number; // 0-based
   col: number; // 0-based
   status: TileStatus;
   need: Need;
+  note: DonorNote | null; // set once the tile is funded (null before, or for seeded demo tiles)
 };
 
 // The partner behind a mural. Each mural belongs to exactly one.
@@ -66,6 +73,7 @@ export type PledgeActivity = {
   title: string;
   amount: number;
   at: string; // ISO timestamp, UTC
+  donorName: string | null; // null = anonymous
 };
 
 // Live events the server pushes to every browser watching a mural.

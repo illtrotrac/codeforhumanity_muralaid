@@ -1,4 +1,5 @@
 import type {
+  DonorNote,
   Mural,
   MuralSummary,
   MuralTile,
@@ -42,9 +43,18 @@ type TileRow = {
   need_title: string;
   need_detail: string;
   need_amount: number;
+  pledge_id: number | null; // null = nobody has pledged (yet)
+  donor_name: string | null;
+  message: string | null;
 };
 
-const TILE_COLUMNS = "tile_number, status, need_title, need_detail, need_amount";
+// Tiles come with their pledge, if any. LEFT JOIN keeps unfunded tiles too
+// (a plain JOIN would silently drop every tile without a pledge).
+const TILE_SELECT = `
+  SELECT t.tile_number, t.status, t.need_title, t.need_detail, t.need_amount,
+         p.id AS pledge_id, p.donor_name, p.message
+    FROM tiles t
+    LEFT JOIN pledges p ON p.mural_id = t.mural_id AND p.tile_number = t.tile_number`;
 
 // Every mural query starts from this, so organisation details always come along.
 const MURAL_SELECT = `
@@ -72,6 +82,7 @@ function toTile(row: TileRow, gridCols: number): MuralTile {
     col: index % gridCols,
     status: row.status,
     need: { title: row.need_title, detail: row.need_detail, amount: row.need_amount },
+    note: row.pledge_id === null ? null : { donorName: row.donor_name, message: row.message },
   };
 }
 
@@ -89,7 +100,7 @@ function findMural(slug: string) {
 
 function findTile(muralId: number, tileNumber: number) {
   return getDb()
-    .prepare(`SELECT ${TILE_COLUMNS} FROM tiles WHERE mural_id = ? AND tile_number = ?`)
+    .prepare(`${TILE_SELECT} WHERE t.mural_id = ? AND t.tile_number = ?`)
     .get(muralId, tileNumber) as TileRow | undefined;
 }
 
@@ -130,7 +141,7 @@ export function getMural(slug: string): Mural | null {
   if (!mural) return null;
 
   const tiles = getDb()
-    .prepare(`SELECT ${TILE_COLUMNS} FROM tiles WHERE mural_id = ? ORDER BY tile_number`)
+    .prepare(`${TILE_SELECT} WHERE t.mural_id = ? ORDER BY t.tile_number`)
     .all(mural.id) as TileRow[];
 
   return {
@@ -155,7 +166,7 @@ export function getMural(slug: string): Mural | null {
 export function recentPledges(slug: string, limit = 5): PledgeActivity[] {
   const rows = getDb()
     .prepare(
-      `SELECT p.tile_number, p.amount, p.created_at, t.need_title
+      `SELECT p.tile_number, p.amount, p.created_at, p.donor_name, t.need_title
          FROM pledges p
          JOIN murals m ON m.id = p.mural_id
          JOIN tiles t  ON t.mural_id = p.mural_id AND t.tile_number = p.tile_number
@@ -167,6 +178,7 @@ export function recentPledges(slug: string, limit = 5): PledgeActivity[] {
     tile_number: number;
     amount: number;
     created_at: string;
+    donor_name: string | null;
     need_title: string;
   }>;
 
@@ -175,6 +187,7 @@ export function recentPledges(slug: string, limit = 5): PledgeActivity[] {
     title: r.need_title,
     amount: r.amount,
     at: toIsoUtc(r.created_at),
+    donorName: r.donor_name,
   }));
 }
 
@@ -188,7 +201,7 @@ export type PledgeResult =
   | { ok: true; tile: MuralTile; completed: boolean; pledge: PledgeActivity }
   | WriteFailure;
 
-export function pledgeTile(slug: string, tileNumber: number): PledgeResult {
+export function pledgeTile(slug: string, tileNumber: number, note: DonorNote): PledgeResult {
   const db = getDb();
   return transaction(db, () => {
     const mural = findMural(slug);
@@ -210,13 +223,15 @@ export function pledgeTile(slug: string, tileNumber: number): PledgeResult {
         : { ok: false, reason: "not_found" };
     }
 
-    const tile = findTile(mural.id, tileNumber)!;
+    const amount = findTile(mural.id, tileNumber)!.need_amount;
     // RETURNING hands back the row we just inserted, including its timestamp.
     const { created_at } = db
       .prepare(
-        "INSERT INTO pledges (mural_id, tile_number, amount) VALUES (?, ?, ?) RETURNING created_at",
+        `INSERT INTO pledges (mural_id, tile_number, amount, donor_name, message)
+         VALUES (?, ?, ?, ?, ?) RETURNING created_at`,
       )
-      .get(mural.id, tileNumber, tile.need_amount) as { created_at: string };
+      .get(mural.id, tileNumber, amount, note.donorName, note.message) as { created_at: string };
+    const tile = findTile(mural.id, tileNumber)!; // re-read, now with its note
 
     const { locked } = db
       .prepare("SELECT COUNT(*) AS locked FROM tiles WHERE mural_id = ? AND status = 'locked'")
@@ -231,6 +246,7 @@ export function pledgeTile(slug: string, tileNumber: number): PledgeResult {
         title: tile.need_title,
         amount: tile.need_amount,
         at: toIsoUtc(created_at),
+        donorName: note.donorName,
       },
     };
   });

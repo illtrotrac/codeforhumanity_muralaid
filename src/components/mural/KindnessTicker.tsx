@@ -20,8 +20,8 @@ type KindnessTickerProps = {
   pledges: PledgeActivity[]; // newest first
 };
 
-// The "recent kindness" feed, like GoFundMe's recent donations. Pledges are
-// anonymous: we show what was funded, never who funded it.
+// The "recent kindness" feed, like GoFundMe's recent donations. Donors who
+// left a name are named; everyone else is "Someone".
 export function KindnessTicker({ pledges }: KindnessTickerProps) {
   // null until we're running in the browser. The server can't know the
   // viewer's "now", so it leaves the times blank and the browser fills them
@@ -52,7 +52,8 @@ export function KindnessTicker({ pledges }: KindnessTickerProps) {
               className="kindness-item flex items-baseline justify-between gap-4 text-sm"
             >
               <span className="min-w-0 text-ink">
-                Someone funded <span className="text-ink-strong">{p.title.toLowerCase()}</span>
+                {p.donorName ?? "Someone"} funded{" "}
+                <span className="text-ink-strong">{p.title.toLowerCase()}</span>
                 <span className="text-ink-muted"> · ${p.amount}</span>
               </span>
               <time dateTime={p.at} className="shrink-0 text-ink-muted tabular-nums">

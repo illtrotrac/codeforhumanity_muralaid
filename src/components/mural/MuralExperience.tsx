@@ -3,7 +3,7 @@
 import { useState, type ReactNode } from "react";
 import { MuralMagic, TAP_MS } from "@/components/magic/MuralMagic";
 import { playChime } from "@/lib/chime";
-import type { Mural as MuralData, PledgeActivity } from "@/lib/types";
+import type { DonorNote, Mural as MuralData, PledgeActivity } from "@/lib/types";
 import { KindnessTicker } from "./KindnessTicker";
 import { Mural } from "./Mural";
 import { NeedPanel } from "./NeedPanel";
@@ -51,7 +51,7 @@ export function MuralExperience({
   const restored = tiles.filter((t) => t.status === "restored").length;
   const isComplete = restored === total;
 
-  function handlePledge(id: number) {
+  function handlePledge(id: number, note: DonorNote) {
     // Was this the last locked tile? We decide here, inside the click and
     // before any waiting, so the chime is allowed to play (browsers block
     // sound that doesn't come straight from a click).
@@ -63,7 +63,7 @@ export function MuralExperience({
 
     setSelectedId(null);
     setJustRestoredId(id);
-    void pledge(id); // starts the request; the tile is coloured immediately
+    void pledge(id, note); // starts the request; the tile is coloured immediately
   }
 
   function handleDemo(action: "reset" | "skip-to-finale") {

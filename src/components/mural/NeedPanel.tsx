@@ -1,14 +1,15 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState, type FormEvent } from "react";
 import { VerifiedBadge } from "@/components/murals/VerifiedBadge";
-import type { MuralTile, Organisation } from "@/lib/types";
+import { MESSAGE_MAX, NAME_MAX, validateNote, type NoteErrors } from "@/lib/note-validation";
+import type { DonorNote, MuralTile, Organisation } from "@/lib/types";
 
 type NeedPanelProps = {
   tile: MuralTile | null; // null means the panel is closed
   organisation: Organisation; // who asked for every need on this mural
   onClose: () => void;
-  onPledge: (id: number) => void;
+  onPledge: (id: number, note: DonorNote) => void;
 };
 
 // A side panel built on the native <dialog> element. showModal() gives us,
@@ -64,28 +65,108 @@ export function NeedPanel({ tile, organisation, onClose, onPledge }: NeedPanelPr
             </p>
           </div>
 
-          <div className="mt-auto flex flex-col gap-3">
+          <div className="mt-auto">
             {tile.status === "locked" ? (
-              <>
-                <button
-                  type="button"
-                  onClick={() => onPledge(tile.id)}
-                  className="rounded-pill bg-accent px-6 py-4 font-semibold text-accent-ink transition-all duration-300 ease-out-soft hover:-translate-y-0.5 hover:bg-accent-hover hover:shadow-glow active:bg-accent-pressed"
-                >
-                  Pledge ${tile.need.amount}
-                </button>
-                <p className="text-center text-sm text-ink-muted">
-                  Demo only. No real payment is taken.
-                </p>
-              </>
+              // key: a fresh, empty form for each tile you open
+              <PledgeForm key={tile.id} tile={tile} onPledge={onPledge} />
             ) : (
-              <p className="rounded-panel bg-surface-raised p-5 text-ink">
-                A neighbour already met this need. This part of the wall is back in colour.
-              </p>
+              <FundedNote note={tile.note} />
             )}
           </div>
         </div>
       )}
     </dialog>
+  );
+}
+
+function PledgeForm({ tile, onPledge }: { tile: MuralTile; onPledge: NeedPanelProps["onPledge"] }) {
+  const [message, setMessage] = useState(""); // kept in state only to drive the counter
+  const [errors, setErrors] = useState<NoteErrors>({});
+
+  function handleSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const data = new FormData(event.currentTarget);
+    const checked = validateNote({ donorName: data.get("donorName"), message: data.get("message") });
+    if (!checked.ok) return setErrors(checked.errors);
+    // Submitting from the button click still counts as a click for the
+    // browser, so the celebration chime is allowed to play.
+    onPledge(tile.id, checked.note);
+  }
+
+  const remaining = MESSAGE_MAX - message.length;
+
+  return (
+    <form onSubmit={handleSubmit} noValidate className="flex flex-col gap-4">
+      <div className="flex flex-col gap-2">
+        <label htmlFor="pledge-name" className="font-mono text-label uppercase text-ink-muted">
+          Your name <span className="normal-case tracking-normal">(optional)</span>
+        </label>
+        <input
+          id="pledge-name"
+          name="donorName"
+          type="text"
+          maxLength={NAME_MAX}
+          autoComplete="given-name"
+          placeholder="Leave blank to stay anonymous"
+          aria-invalid={errors.donorName ? true : undefined}
+          aria-describedby={errors.donorName ? "pledge-name-error" : undefined}
+          className="field"
+        />
+        {errors.donorName && (
+          <p id="pledge-name-error" className="text-sm text-danger">{errors.donorName}</p>
+        )}
+      </div>
+
+      <div className="flex flex-col gap-2">
+        <label htmlFor="pledge-message" className="font-mono text-label uppercase text-ink-muted">
+          A note for the wall <span className="normal-case tracking-normal">(optional)</span>
+        </label>
+        <textarea
+          id="pledge-message"
+          name="message"
+          rows={2}
+          maxLength={MESSAGE_MAX}
+          value={message}
+          onChange={(e) => setMessage(e.target.value)}
+          placeholder="Stay warm out there."
+          aria-invalid={errors.message ? true : undefined}
+          aria-describedby="pledge-message-count pledge-message-error"
+          className="field resize-none"
+        />
+        <div className="flex justify-between gap-4 text-sm">
+          <p id="pledge-message-error" className="text-danger">{errors.message}</p>
+          <p id="pledge-message-count" className="shrink-0 text-ink-muted tabular-nums">
+            {remaining} left
+          </p>
+        </div>
+      </div>
+
+      <button
+        type="submit"
+        className="rounded-pill bg-accent px-6 py-4 font-semibold text-accent-ink transition-all duration-300 ease-out-soft hover:-translate-y-0.5 hover:bg-accent-hover hover:shadow-glow active:bg-accent-pressed"
+      >
+        Pledge ${tile.need.amount}
+      </button>
+      <p className="text-center text-sm text-ink-muted">
+        Demo only. No real payment is taken. Notes appear publicly on the wall.
+      </p>
+    </form>
+  );
+}
+
+// What a funded region says about who coloured it in.
+function FundedNote({ note }: { note: DonorNote | null }) {
+  const who = note?.donorName ?? "A neighbour";
+  return (
+    <figure className="flex flex-col gap-3 rounded-panel bg-surface-raised p-5">
+      {note?.message && (
+        <blockquote className="font-display text-xl leading-snug text-ink-strong">
+          &ldquo;{note.message}&rdquo;
+        </blockquote>
+      )}
+      <figcaption className="text-sm text-ink-muted">
+        <span className="text-ink">{who}</span> coloured this part of the wall back in.
+      </figcaption>
+    </figure>
   );
 }

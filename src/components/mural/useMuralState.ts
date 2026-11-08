@@ -5,12 +5,12 @@ import { muralApi } from "@/lib/mural-api";
 import type { NeedErrors } from "@/lib/need-validation";
 import type {
   DemoAction,
+  DonorNote,
   Mural,
   MuralEvent,
   MuralTile,
   Need,
   PledgeActivity,
-  TileStatus,
 } from "@/lib/types";
 
 export type SaveNeedResult = { ok: true } | { ok: false; message: string; errors?: NeedErrors };
@@ -92,19 +92,15 @@ export function useMuralState(initial: Mural, live: LiveHandlers = {}) {
     return () => source.close(); // leaving the page closes the stream
   }, [slug]);
 
-  function setStatus(id: number, status: TileStatus) {
-    setTiles((prev) => prev.map((t) => (t.id === id ? { ...t, status } : t)));
-  }
-
-  // Optimistic update: colour the tile straight away, then tell the server.
-  // If the server says no, put it back and explain.
-  async function pledge(id: number) {
+  // Optimistic update: colour the tile (and show the note) straight away,
+  // then tell the server. If the server says no, put it back and explain.
+  async function pledge(id: number, note: DonorNote) {
     setError(null);
-    setStatus(id, "restored");
-    const result = await muralApi.pledge(slug, id);
+    setTiles((prev) => prev.map((t) => (t.id === id ? { ...t, status: "restored", note } : t)));
+    const result = await muralApi.pledge(slug, id, note);
     if (result.ok) return;
     if (result.status === 409) return; // someone else funded it first; it's in colour either way
-    setStatus(id, "locked");
+    setTiles((prev) => prev.map((t) => (t.id === id ? { ...t, status: "locked", note: null } : t)));
     setError(`Your pledge didn't go through: ${result.error}`);
   }
 
