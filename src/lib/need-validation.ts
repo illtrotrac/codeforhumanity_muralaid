@@ -4,7 +4,7 @@ import type { Need } from "./types";
 // The admin form uses it now; in step 4 the server runs the same function,
 // because anything sent from a browser can be faked.
 
-export type NeedField = "title" | "detail" | "amount" | "postedBy";
+export type NeedField = "title" | "detail" | "amount";
 export type NeedErrors = Partial<Record<NeedField, string>>;
 
 export const AMOUNT_MIN = 1;
@@ -27,7 +27,6 @@ function checkLength(value: string, label: string, min: number, max: number) {
 export function validateNeed(input: NeedInput): ValidationResult {
   const title = text(input.title);
   const detail = text(input.detail);
-  const postedBy = text(input.postedBy);
   const amount = Number(text(input.amount));
 
   const errors: NeedErrors = {};
@@ -38,13 +37,10 @@ export function validateNeed(input: NeedInput): ValidationResult {
   const detailError = checkLength(detail, "Description", 10, 160);
   if (detailError) errors.detail = detailError;
 
-  const postedByError = checkLength(postedBy, "Organisation", 2, 60);
-  if (postedByError) errors.postedBy = postedByError;
-
   if (!Number.isInteger(amount) || amount < AMOUNT_MIN || amount > AMOUNT_MAX) {
     errors.amount = `Enter a whole dollar amount from $${AMOUNT_MIN} to $${AMOUNT_MAX}.`;
   }
 
   if (Object.keys(errors).length > 0) return { ok: false, errors };
-  return { ok: true, need: { title, detail, amount, postedBy } };
+  return { ok: true, need: { title, detail, amount } };
 }

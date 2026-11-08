@@ -2,12 +2,12 @@
 
 export type TileStatus = "locked" | "restored";
 
-// What a neighbour has asked for. Every need is a money donation, in whole dollars.
+// What a neighbour has asked for. Every need is a money donation, in whole
+// dollars. Who asked is the mural's organisation.
 export type Need = {
   title: string;
   detail: string;
   amount: number;
-  postedBy: string;
 };
 
 export type MuralTile = {
@@ -18,6 +18,15 @@ export type MuralTile = {
   need: Need;
 };
 
+// The partner behind a mural. Each mural belongs to exactly one.
+export type Organisation = {
+  slug: string;
+  name: string;
+  sector: string; // e.g. "Animal welfare"
+  tagline: string;
+  isVerified: boolean;
+};
+
 export type Mural = {
   slug: string; // the mural's name in URLs, e.g. /murals/the-long-table
   pageOrder: number; // its page in the storybook
@@ -25,9 +34,11 @@ export type Mural = {
   location: string;
   imageSrc: string;
   imageAlt: string;
-  gridSize: number; // 8 means an 8x8 grid
+  gridCols: number; // tiles across
+  gridRows: number; // tiles down
   isAiSample: boolean;
   finaleTileId: number; // the tile the live demo saves for last
+  organisation: Organisation;
   tiles: MuralTile[];
 };
 
@@ -38,6 +49,7 @@ export type MuralSummary = {
   title: string;
   location: string;
   imageSrc: string;
+  organisation: Organisation;
   totalTiles: number;
   restoredTiles: number;
 };

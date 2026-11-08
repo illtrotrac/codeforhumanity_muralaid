@@ -39,7 +39,7 @@ export function Mural({
           data-magic={isCelebrating || undefined}
           style={
             {
-              gridTemplateColumns: `repeat(${mural.gridSize}, minmax(0, 1fr))`,
+              gridTemplateColumns: `repeat(${mural.gridCols}, minmax(0, 1fr))`,
               "--magic-tap": `${TAP_MS}ms`,
             } as CSSProperties
           }
@@ -48,7 +48,8 @@ export function Mural({
             <Tile
               key={tile.id}
               tile={tile}
-              gridSize={mural.gridSize}
+              gridCols={mural.gridCols}
+              gridRows={mural.gridRows}
               imageSrc={mural.imageSrc}
               justRestored={tile.id === justRestoredId}
               selected={isAdmin ? tile.id === selectedId : undefined}

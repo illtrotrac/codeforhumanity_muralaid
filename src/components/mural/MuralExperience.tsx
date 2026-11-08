@@ -49,8 +49,17 @@ export function MuralExperience({ mural: initialMural, children }: MuralExperien
     void runDemo(action);
   }
 
+  // Square murals sit beside the text; wide ones get the full width below it.
+  const isWide = mural.gridCols > mural.gridRows;
+
   return (
-    <div className="grid items-center gap-12 lg:grid-cols-[minmax(0,5fr)_minmax(0,6fr)] lg:gap-16">
+    <div
+      className={
+        isWide
+          ? "flex flex-col gap-12"
+          : "grid items-center gap-12 lg:grid-cols-[minmax(0,5fr)_minmax(0,6fr)] lg:gap-16"
+      }
+    >
       <header className="flex flex-col gap-6">
         {children}
 
@@ -117,6 +126,7 @@ export function MuralExperience({ mural: initialMural, children }: MuralExperien
 
       <NeedPanel
         tile={selectedTile}
+        organisation={mural.organisation}
         onClose={() => setSelectedId(null)}
         onPledge={handlePledge}
       />

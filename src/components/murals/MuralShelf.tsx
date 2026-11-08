@@ -37,8 +37,11 @@ export async function MuralShelf({ basePath }: MuralShelfProps) {
                 />
               </div>
               <div className="flex flex-col gap-2 px-2 pb-2">
-                <p className="font-mono text-label uppercase text-ink-muted">Page {m.pageOrder}</p>
+                <p className="font-mono text-label uppercase text-ink-muted">
+                  Page {m.pageOrder} · {m.organisation.sector}
+                </p>
                 <h2 className="font-display text-2xl tracking-tight text-ink-strong">{m.title}</h2>
+                <p className="text-sm text-ink">{m.organisation.name}</p>
                 <p className="text-sm text-ink-muted">
                   {m.restoredTiles} of {m.totalTiles} tiles restored · {percent}%
                 </p>

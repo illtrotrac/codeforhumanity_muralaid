@@ -1,4 +1,4 @@
-import type { Mural, MuralSummary, MuralTile, Need } from "@/lib/types";
+import type { Mural, MuralSummary, MuralTile, Need, Organisation } from "@/lib/types";
 import { getDb } from "./db";
 import { reseedMural } from "./seed";
 import { transaction } from "./transaction";
@@ -7,6 +7,7 @@ import { transaction } from "./transaction";
 // else asks it for plain Mural objects and never sees a database row.
 
 // What a row looks like as it comes out of SQLite (snake_case, 0/1 booleans).
+// Mural rows are always read joined with their organisation (org_* columns).
 type MuralRow = {
   id: number;
   slug: string;
@@ -15,9 +16,15 @@ type MuralRow = {
   location: string;
   image_src: string;
   image_alt: string;
-  grid_size: number;
+  grid_cols: number;
+  grid_rows: number;
   is_ai_sample: number;
   finale_tile: number;
+  org_slug: string;
+  org_name: string;
+  org_sector: string;
+  org_tagline: string;
+  org_is_verified: number;
 };
 
 type TileRow = {
@@ -26,31 +33,43 @@ type TileRow = {
   need_title: string;
   need_detail: string;
   need_amount: number;
-  posted_by: string;
 };
 
-const TILE_COLUMNS = "tile_number, status, need_title, need_detail, need_amount, posted_by";
+const TILE_COLUMNS = "tile_number, status, need_title, need_detail, need_amount";
 
-function toTile(row: TileRow, gridSize: number): MuralTile {
+// Every mural query starts from this, so organisation details always come along.
+const MURAL_SELECT = `
+  SELECT m.*,
+         o.slug AS org_slug, o.name AS org_name, o.sector AS org_sector,
+         o.tagline AS org_tagline, o.is_verified AS org_is_verified
+    FROM murals m
+    JOIN organisations o ON o.id = m.organisation_id`;
+
+function toOrganisation(row: MuralRow): Organisation {
+  return {
+    slug: row.org_slug,
+    name: row.org_name,
+    sector: row.org_sector,
+    tagline: row.org_tagline,
+    isVerified: row.org_is_verified === 1,
+  };
+}
+
+function toTile(row: TileRow, gridCols: number): MuralTile {
   const index = row.tile_number - 1;
   return {
     id: row.tile_number,
-    row: Math.floor(index / gridSize),
-    col: index % gridSize,
+    row: Math.floor(index / gridCols),
+    col: index % gridCols,
     status: row.status,
-    need: {
-      title: row.need_title,
-      detail: row.need_detail,
-      amount: row.need_amount,
-      postedBy: row.posted_by,
-    },
+    need: { title: row.need_title, detail: row.need_detail, amount: row.need_amount },
   };
 }
 
 function findMural(slug: string) {
   // "?" placeholders: SQLite inserts the value safely, so a slug like
   // "x'; DROP TABLE murals; --" is just a string that matches nothing.
-  return getDb().prepare("SELECT * FROM murals WHERE slug = ?").get(slug) as MuralRow | undefined;
+  return getDb().prepare(`${MURAL_SELECT} WHERE m.slug = ?`).get(slug) as MuralRow | undefined;
 }
 
 function findTile(muralId: number, tileNumber: number) {
@@ -65,20 +84,14 @@ export function listMurals(): MuralSummary[] {
   // One query that counts tiles per mural, instead of loading every tile.
   const rows = getDb()
     .prepare(
-      `SELECT m.slug, m.page_order, m.title, m.location, m.image_src,
-              COUNT(t.tile_number)                    AS total_tiles,
-              COALESCE(SUM(t.status = 'restored'), 0) AS restored_tiles
-         FROM murals m
-         LEFT JOIN tiles t ON t.mural_id = m.id
-        GROUP BY m.id
-        ORDER BY m.page_order`,
+      `SELECT base.*,
+              (SELECT COUNT(*) FROM tiles t WHERE t.mural_id = base.id) AS total_tiles,
+              (SELECT COUNT(*) FROM tiles t
+                WHERE t.mural_id = base.id AND t.status = 'restored')    AS restored_tiles
+         FROM (${MURAL_SELECT}) AS base
+        ORDER BY base.page_order`,
     )
-    .all() as Array<
-    Pick<MuralRow, "slug" | "page_order" | "title" | "location" | "image_src"> & {
-      total_tiles: number;
-      restored_tiles: number;
-    }
-  >;
+    .all() as Array<MuralRow & { total_tiles: number; restored_tiles: number }>;
 
   return rows.map((r) => ({
     slug: r.slug,
@@ -86,6 +99,7 @@ export function listMurals(): MuralSummary[] {
     title: r.title,
     location: r.location,
     imageSrc: r.image_src,
+    organisation: toOrganisation(r),
     totalTiles: r.total_tiles,
     restoredTiles: r.restored_tiles,
   }));
@@ -106,10 +120,12 @@ export function getMural(slug: string): Mural | null {
     location: mural.location,
     imageSrc: mural.image_src,
     imageAlt: mural.image_alt,
-    gridSize: mural.grid_size,
+    gridCols: mural.grid_cols,
+    gridRows: mural.grid_rows,
     isAiSample: mural.is_ai_sample === 1,
     finaleTileId: mural.finale_tile,
-    tiles: tiles.map((row) => toTile(row, mural.grid_size)),
+    organisation: toOrganisation(mural),
+    tiles: tiles.map((row) => toTile(row, mural.grid_cols)),
   };
 }
 
@@ -154,7 +170,7 @@ export function pledgeTile(slug: string, tileNumber: number): PledgeResult {
       .prepare("SELECT COUNT(*) AS locked FROM tiles WHERE mural_id = ? AND status = 'locked'")
       .get(mural.id) as { locked: number };
 
-    return { ok: true, tile: toTile(tile, mural.grid_size), completed: locked === 0 };
+    return { ok: true, tile: toTile(tile, mural.grid_cols), completed: locked === 0 };
   });
 }
 
@@ -169,15 +185,15 @@ export function updateNeed(slug: string, tileNumber: number, need: Need): Update
     // A funded tile's need is history: someone paid for exactly that.
     const { changes } = db
       .prepare(
-        `UPDATE tiles SET need_title = ?, need_detail = ?, need_amount = ?, posted_by = ?
+        `UPDATE tiles SET need_title = ?, need_detail = ?, need_amount = ?
           WHERE mural_id = ? AND tile_number = ? AND status = 'locked'`,
       )
-      .run(need.title, need.detail, need.amount, need.postedBy, mural.id, tileNumber);
+      .run(need.title, need.detail, need.amount, mural.id, tileNumber);
 
     const tile = findTile(mural.id, tileNumber);
     if (!tile) return { ok: false, reason: "not_found" };
     if (changes === 0) return { ok: false, reason: "already_funded" };
-    return { ok: true, tile: toTile(tile, mural.grid_size) };
+    return { ok: true, tile: toTile(tile, mural.grid_cols) };
   });
 }
 

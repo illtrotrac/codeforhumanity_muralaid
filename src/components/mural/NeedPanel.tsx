@@ -1,10 +1,12 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import type { MuralTile } from "@/lib/types";
+import { VerifiedBadge } from "@/components/murals/VerifiedBadge";
+import type { MuralTile, Organisation } from "@/lib/types";
 
 type NeedPanelProps = {
   tile: MuralTile | null; // null means the panel is closed
+  organisation: Organisation; // who asked for every need on this mural
   onClose: () => void;
   onPledge: (id: number) => void;
 };
@@ -12,7 +14,7 @@ type NeedPanelProps = {
 // A side panel built on the native <dialog> element. showModal() gives us,
 // for free: focus moves inside, Tab stays inside, Esc closes it, the page
 // behind becomes inert, and focus returns to the tile when it closes.
-export function NeedPanel({ tile, onClose, onPledge }: NeedPanelProps) {
+export function NeedPanel({ tile, organisation, onClose, onPledge }: NeedPanelProps) {
   const dialogRef = useRef<HTMLDialogElement>(null);
 
   // React state says whether the panel should be open; this effect makes
@@ -56,8 +58,9 @@ export function NeedPanel({ tile, onClose, onPledge }: NeedPanelProps) {
               {tile.need.title}
             </h2>
             <p className="text-ink-muted">{tile.need.detail}</p>
-            <p className="text-sm text-ink-muted">
-              Requested by <span className="text-ink">{tile.need.postedBy}</span>
+            <p className="flex flex-wrap items-center gap-2 text-sm text-ink-muted">
+              Requested by <span className="text-ink">{organisation.name}</span>
+              {organisation.isVerified && <VerifiedBadge />}
             </p>
           </div>
 

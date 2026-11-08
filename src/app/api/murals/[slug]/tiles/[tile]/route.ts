@@ -3,7 +3,7 @@ import { jsonError, parseTileNumber, readJson } from "@/server/http";
 import { updateNeed } from "@/server/murals";
 
 // PATCH /api/murals/:slug/tiles/:tile - change what a locked tile asks for.
-// Body: { title, detail, amount, postedBy }
+// Body: { title, detail, amount }
 export async function PATCH(
   request: Request,
   ctx: RouteContext<"/api/murals/[slug]/tiles/[tile]">,
@@ -24,7 +24,6 @@ export async function PATCH(
     title: input.title,
     detail: input.detail,
     amount: String(input.amount ?? ""),
-    postedBy: input.postedBy,
   });
   if (!result.ok) return jsonError("Some fields need fixing.", 400, { errors: result.errors });
 

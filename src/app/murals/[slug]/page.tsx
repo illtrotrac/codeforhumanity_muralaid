@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import { connection } from "next/server";
 import { Suspense } from "react";
 import { MuralExperience } from "@/components/mural/MuralExperience";
+import { VerifiedBadge } from "@/components/murals/VerifiedBadge";
 import { getMural } from "@/server/murals";
 
 // /murals/the-long-table, /murals/the-urban-harvest, ...
@@ -24,11 +25,17 @@ async function MuralLoader({ params }: { params: Promise<{ slug: string }> }) {
 
   return (
     <MuralExperience mural={mural}>
-      <p className="font-mono text-label uppercase text-ink-muted">{mural.location}</p>
+      <p className="font-mono text-label uppercase text-ink-muted">
+        {mural.organisation.sector} · {mural.location}
+      </p>
       <h1 className="font-display text-display text-ink-strong text-balance">{mural.title}</h1>
-      <p className="max-w-[48ch] text-lg text-ink-muted">
-        Each tile is a real need from a neighbour. Fund one, and that part of
-        the wall gets its colour back.
+      <div className="flex flex-wrap items-center gap-3">
+        <p className="text-lg text-ink">With {mural.organisation.name}</p>
+        {mural.organisation.isVerified && <VerifiedBadge />}
+      </div>
+      <p className="max-w-[52ch] text-lg text-ink-muted">
+        {mural.organisation.tagline} Each tile is one of their real needs. Fund
+        one, and that part of the wall gets its colour back.
       </p>
     </MuralExperience>
   );

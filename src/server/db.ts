@@ -1,7 +1,7 @@
 import { mkdirSync } from "node:fs";
 import path from "node:path";
 import { DatabaseSync } from "node:sqlite";
-import { seedMissingMurals } from "./seed";
+import { seedDatabase } from "./seed";
 import { transaction } from "./transaction";
 
 // One SQLite file on disk is our whole database. It lives in /data, which
@@ -51,6 +51,30 @@ const MIGRATIONS = [
     FOREIGN KEY (mural_id, tile_number) REFERENCES tiles(mural_id, tile_number) ON DELETE CASCADE
   );
   `,
+
+  /* v2: one organisation per mural, and non-square grids */ `
+  CREATE TABLE organisations (
+    id          INTEGER PRIMARY KEY,
+    slug        TEXT    NOT NULL UNIQUE,
+    name        TEXT    NOT NULL,
+    sector      TEXT    NOT NULL,
+    tagline     TEXT    NOT NULL,
+    is_verified INTEGER NOT NULL DEFAULT 0
+  );
+
+  -- Existing murals get linked to their organisation by the seed step.
+  ALTER TABLE murals ADD COLUMN organisation_id INTEGER REFERENCES organisations(id);
+
+  -- grid_size (always square) becomes columns x rows. Copy the old value
+  -- into both before dropping it, so existing murals keep their shape.
+  ALTER TABLE murals ADD COLUMN grid_cols INTEGER NOT NULL DEFAULT 0;
+  ALTER TABLE murals ADD COLUMN grid_rows INTEGER NOT NULL DEFAULT 0;
+  UPDATE murals SET grid_cols = grid_size, grid_rows = grid_size;
+  ALTER TABLE murals DROP COLUMN grid_size;
+
+  -- The requester is now the mural's organisation, not a per-tile field.
+  ALTER TABLE tiles DROP COLUMN posted_by;
+  `,
 ];
 
 function migrate(db: DatabaseSync) {
@@ -74,7 +98,7 @@ function open(): DatabaseSync {
     PRAGMA busy_timeout = 5000;  -- wait up to 5s for a lock instead of failing
   `);
   migrate(db);
-  seedMissingMurals(db);
+  seedDatabase(db);
   return db;
 }
 

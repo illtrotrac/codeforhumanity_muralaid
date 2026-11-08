@@ -1,24 +1,62 @@
-import type { Mural, MuralTile, Need } from "@/lib/types";
+import type { Mural, MuralTile, Need, Organisation } from "@/lib/types";
 
-// The sample murals a fresh database starts with, one per storybook page.
-// All artwork is AI-generated; real murals come from local artists.
-// Organisation names are fictional.
+// The sample data a fresh database starts with: one organisation per
+// sector, one mural per organisation, one storybook page per mural.
+// All artwork is AI-generated and every organisation is fictional.
 
-type SeedMural = Omit<Mural, "tiles"> & {
+export const SEED_ORGANISATIONS: Organisation[] = [
+  {
+    slug: "harbour-house-shelter",
+    name: "Harbour House Shelter",
+    sector: "Homelessness",
+    tagline: "Warm beds, hot meals and a way back to a home of your own.",
+    isVerified: true,
+  },
+  {
+    slug: "lantern-learning-trust",
+    name: "Lantern Learning Trust",
+    sector: "Education & youth",
+    tagline: "Free tutoring, books and makerspaces for curious young minds.",
+    isVerified: true,
+  },
+  {
+    slug: "common-ground-growers",
+    name: "Common Ground Growers",
+    sector: "Food security",
+    tagline: "Neighbourhood gardens that turn empty lots into fresh food.",
+    isVerified: true,
+  },
+  {
+    slug: "second-chance-paws",
+    name: "Second Chance Paws Rescue",
+    sector: "Animal welfare",
+    tagline: "Rescuing, healing and rehoming the city's stray cats and dogs.",
+    isVerified: true,
+  },
+  {
+    slug: "little-harbour-childrens-home",
+    name: "Little Harbour Children's Home",
+    sector: "Children in care",
+    tagline: "A safe, loving home for children who can't live with their families.",
+    isVerified: true,
+  },
+];
+
+type SeedMural = Omit<Mural, "tiles" | "organisation"> & {
+  organisationSlug: string;
   needs: Need[]; // handed out to tiles in rotation
   finaleNeed: Need; // the need on finaleTileId
   restoredIds: number[]; // tiles that start in colour, so the demo isn't empty
 };
 
 function buildTiles(seed: SeedMural): MuralTile[] {
-  const size = seed.gridSize;
   const restored = new Set(seed.restoredIds);
-  return Array.from({ length: size * size }, (_, index) => {
+  return Array.from({ length: seed.gridCols * seed.gridRows }, (_, index) => {
     const id = index + 1;
     return {
       id,
-      row: Math.floor(index / size),
-      col: index % size,
+      row: Math.floor(index / seed.gridCols),
+      col: index % seed.gridCols,
       status: restored.has(id) ? "restored" : "locked",
       need: id === seed.finaleTileId ? seed.finaleNeed : seed.needs[index % seed.needs.length],
     };
@@ -28,91 +66,136 @@ function buildTiles(seed: SeedMural): MuralTile[] {
 const SEEDS: SeedMural[] = [
   {
     slug: "the-long-table",
+    organisationSlug: "harbour-house-shelter",
     pageOrder: 1,
     title: "The Long Table",
     location: "Sample wall · Riverside",
     imageSrc: "/mural/sample.jpg",
     imageAlt:
       "A painted street mural of neighbours sharing a meal at a long table, while a family hands a red winter coat to a young man under a sunrise over colourful houses.",
-    gridSize: 8,
+    gridCols: 8,
+    gridRows: 8,
     isAiSample: true,
     finaleTileId: 46, // the red coat
     restoredIds: [1, 2, 8, 13, 15, 20, 23, 29, 31, 34],
-    finaleNeed: {
-      title: "A winter coat",
-      detail: "Your $15 completes a warm coat for a teenager before the first frost.",
-      amount: 15,
-      postedBy: "Eastside Shelter",
-    },
+    finaleNeed: { title: "A winter coat", detail: "Your $15 completes a warm coat for a teenager before the first frost.", amount: 15 },
     needs: [
-      { title: "A hot meal", detail: "One dinner from the community kitchen, served tonight.", amount: 8, postedBy: "Riverside Community Kitchen" },
-      { title: "A week of bus fare", detail: "Gets someone to a new job for their first week.", amount: 12, postedBy: "Eastside Shelter" },
-      { title: "A month of phone credit", detail: "Keeps a job seeker reachable by employers.", amount: 10, postedBy: "Northgate Food Bank" },
-      { title: "School supplies kit", detail: "Notebooks, pens and a backpack for one student.", amount: 10, postedBy: "Eastside Shelter" },
-      { title: "Groceries for a family", detail: "A week of staples for a family of four.", amount: 25, postedBy: "Northgate Food Bank" },
-      { title: "A warm blanket", detail: "For a new arrival at the overnight shelter.", amount: 9, postedBy: "Eastside Shelter" },
-      { title: "A week of laundry", detail: "Clean clothes for job interviews and school.", amount: 7, postedBy: "Riverside Community Kitchen" },
+      { title: "A hot meal", detail: "One dinner from the community kitchen, served tonight.", amount: 8 },
+      { title: "A week of bus fare", detail: "Gets someone to a new job for their first week.", amount: 12 },
+      { title: "A month of phone credit", detail: "Keeps a job seeker reachable by employers.", amount: 10 },
+      { title: "A toiletries kit", detail: "Soap, toothbrush and razor for a new arrival.", amount: 6 },
+      { title: "Groceries for a family", detail: "A week of staples for a family of four.", amount: 25 },
+      { title: "A warm blanket", detail: "For a new arrival at the overnight shelter.", amount: 9 },
+      { title: "A week of laundry", detail: "Clean clothes for job interviews.", amount: 7 },
     ],
   },
   {
     slug: "the-learning-circle",
+    organisationSlug: "lantern-learning-trust",
     pageOrder: 2,
     title: "The Learning Circle",
     location: "Sample wall · Southside Library",
     imageSrc: "/mural/learning-circle.jpg",
     imageAlt:
       "A painted mural titled The Learning Circle: an older man and a girl read a glowing open book, surrounded by children, a makerspace with robots, a community library shelf and a painter at an easel.",
-    gridSize: 8,
+    gridCols: 8,
+    gridRows: 8,
     isAiSample: true,
     finaleTileId: 37, // the glowing book
     restoredIds: [3, 6, 11, 19, 26, 40, 44, 52, 58, 63],
-    finaleNeed: {
-      title: "Storybooks for the circle",
-      detail: "Your $20 completes a box of new picture books for the Saturday reading circle.",
-      amount: 20,
-      postedBy: "Southside Learning Centre",
-    },
+    finaleNeed: { title: "Storybooks for the circle", detail: "Your $20 completes a box of new picture books for the Saturday reading circle.", amount: 20 },
     needs: [
-      { title: "Books for the reading corner", detail: "Three new chapter books chosen by the kids.", amount: 12, postedBy: "Friends of Southside Library" },
-      { title: "An hour of tutoring", detail: "One-to-one maths help before exams.", amount: 15, postedBy: "Southside Learning Centre" },
-      { title: "Robotics club parts", detail: "Motors and sensors for the makerspace team.", amount: 20, postedBy: "Southside Learning Centre" },
-      { title: "A seat on the museum trip", detail: "Covers the bus and entry for one student.", amount: 18, postedBy: "Friends of Southside Library" },
-      { title: "Art supplies for a term", detail: "Paints, brushes and paper for one young artist.", amount: 10, postedBy: "Southside Learning Centre" },
-      { title: "Laptop repair", detail: "Fixes a student's laptop so they can do homework.", amount: 25, postedBy: "Friends of Southside Library" },
-      { title: "A library bus pass", detail: "A month of rides to the library after school.", amount: 8, postedBy: "Southside Learning Centre" },
+      { title: "Books for the reading corner", detail: "Three new chapter books chosen by the kids.", amount: 12 },
+      { title: "An hour of tutoring", detail: "One-to-one maths help before exams.", amount: 15 },
+      { title: "Robotics club parts", detail: "Motors and sensors for the makerspace team.", amount: 20 },
+      { title: "A seat on the museum trip", detail: "Covers the bus and entry for one student.", amount: 18 },
+      { title: "Art supplies for a term", detail: "Paints, brushes and paper for one young artist.", amount: 10 },
+      { title: "Laptop repair", detail: "Fixes a student's laptop so they can do homework.", amount: 25 },
+      { title: "A library bus pass", detail: "A month of rides to the library after school.", amount: 8 },
     ],
   },
   {
     slug: "the-urban-harvest",
+    organisationSlug: "common-ground-growers",
     pageOrder: 3,
     title: "The Urban Harvest",
     location: "Sample wall · Fifth Street garden lot",
     imageSrc: "/mural/urban-harvest.jpg",
     imageAlt:
       "A bright mural titled The Urban Harvest Community Hub: neighbours plant carrots and tomatoes in a community garden under a big sun, beside a fresh produce stall and tall sunflowers.",
-    gridSize: 6,
+    gridCols: 6,
+    gridRows: 6,
     isAiSample: true,
     finaleTileId: 10, // the sun
     restoredIds: [2, 7, 14, 21, 30, 33],
-    finaleNeed: {
-      title: "Grow lights for winter",
-      detail: "Your $25 keeps the greenhouse growing through winter, so the harvest never stops.",
-      amount: 25,
-      postedBy: "Fifth Street Growers",
-    },
+    finaleNeed: { title: "Grow lights for winter", detail: "Your $25 keeps the greenhouse growing through winter, so the harvest never stops.", amount: 25 },
     needs: [
-      { title: "Seed packets for a bed", detail: "Enough seeds to plant one raised garden bed.", amount: 6, postedBy: "Fifth Street Growers" },
-      { title: "A fresh produce box", detail: "A week of vegetables for a family, picked here.", amount: 14, postedBy: "Harvest Hub Pantry" },
-      { title: "Gloves and a trowel", detail: "Tools for a new volunteer gardener.", amount: 9, postedBy: "Fifth Street Growers" },
-      { title: "A community lunch", detail: "One lunch at the Sunday garden table.", amount: 7, postedBy: "Harvest Hub Pantry" },
-      { title: "Compost for the beds", detail: "A bag of compost to feed the soil.", amount: 11, postedBy: "Fifth Street Growers" },
-      { title: "A cooking class seat", detail: "Learn to cook with what grows in the garden.", amount: 12, postedBy: "Harvest Hub Pantry" },
+      { title: "Seed packets for a bed", detail: "Enough seeds to plant one raised garden bed.", amount: 6 },
+      { title: "A fresh produce box", detail: "A week of vegetables for a family, picked here.", amount: 14 },
+      { title: "Gloves and a trowel", detail: "Tools for a new volunteer gardener.", amount: 9 },
+      { title: "A community lunch", detail: "One lunch at the Sunday garden table.", amount: 7 },
+      { title: "Compost for the beds", detail: "A bag of compost to feed the soil.", amount: 11 },
+      { title: "A cooking class seat", detail: "Learn to cook with what grows in the garden.", amount: 12 },
+    ],
+  },
+  {
+    slug: "second-chances",
+    organisationSlug: "second-chance-paws",
+    pageOrder: 4,
+    title: "Second Chances",
+    location: "Sample wall · Old Mill Street",
+    imageSrc: "/mural/second-chance-paws.jpg",
+    imageAlt:
+      "A textured gold and teal mural of a smiling golden retriever and a tabby cat, surrounded by rabbits, birds, sunflowers and a radiant sun, painted on a brick wall.",
+    gridCols: 11, // 1408 x 768 image: 11 x 6 tiles of exactly 128px
+    gridRows: 6,
+    isAiSample: true,
+    finaleTileId: 28, // the golden retriever's face
+    restoredIds: [3, 9, 15, 20, 34, 41, 50, 57, 63],
+    finaleNeed: { title: "Biscuit's adoption kit", detail: "Your $20 completes the kit so Biscuit, our golden retriever, can go home this weekend.", amount: 20 },
+    needs: [
+      { title: "A week of food for a rescue dog", detail: "Good food while they wait for a family.", amount: 10 },
+      { title: "Kitten vaccinations", detail: "First jabs for a kitten found on the street.", amount: 18 },
+      { title: "A cosy kennel bed", detail: "Somewhere soft to sleep after a rough start.", amount: 12 },
+      { title: "Flea treatment for a litter", detail: "Keeps five puppies healthy and comfortable.", amount: 9 },
+      { title: "A microchip", detail: "So a rehomed pet can always find its way back.", amount: 15 },
+      { title: "Toys for the cat room", detail: "Play keeps shelter cats calm and happy.", amount: 6 },
+      { title: "A vet check-up", detail: "A full health check for a new arrival.", amount: 25 },
+    ],
+  },
+  {
+    slug: "a-place-to-belong",
+    organisationSlug: "little-harbour-childrens-home",
+    pageOrder: 5,
+    title: "A Place to Belong",
+    location: "Sample wall · Harbour Road",
+    imageSrc: "/mural/little-harbour.jpg",
+    imageAlt:
+      "A textured mural of smiling children with a shaggy dog, framed by storybooks, a robot, paper planes, a golden sun and drawings of families, painted on a brick wall.",
+    gridCols: 11,
+    gridRows: 6,
+    isAiSample: true,
+    finaleTileId: 19, // the open storybook
+    restoredIds: [2, 7, 12, 25, 31, 38, 46, 53, 60, 65],
+    finaleNeed: { title: "Bedtime stories for every room", detail: "Your $20 completes a shelf of storybooks so every child has one by their bed.", amount: 20 },
+    needs: [
+      { title: "School shoes", detail: "A new pair of school shoes for one child.", amount: 20 },
+      { title: "A birthday party kit", detail: "Cake, candles and a present, so no birthday goes unnoticed.", amount: 12 },
+      { title: "Swimming lessons for a term", detail: "Weekly lessons at the local pool.", amount: 25 },
+      { title: "Art club supplies", detail: "Paints and sketchbooks for after-school art club.", amount: 8 },
+      { title: "A day trip to the coast", detail: "Train tickets and lunch for one child.", amount: 15 },
+      { title: "A homework desk lamp", detail: "Good light for evening homework.", amount: 9 },
+      { title: "Football club fees", detail: "A season with the local junior team.", amount: 14 },
     ],
   },
 ];
 
-// Turn a seed into a real Mural: build its tiles, drop the seed-only fields.
-function toMural(seed: SeedMural): Mural {
+export type SeedMuralWithOrg = Mural & { organisationSlug: string };
+
+// Turn a seed into a real Mural: build its tiles, attach its organisation.
+function toMural(seed: SeedMural): SeedMuralWithOrg {
+  const organisation = SEED_ORGANISATIONS.find((o) => o.slug === seed.organisationSlug);
+  if (!organisation) throw new Error(`Seed mural ${seed.slug} has unknown organisation ${seed.organisationSlug}`);
   return {
     slug: seed.slug,
     pageOrder: seed.pageOrder,
@@ -120,11 +203,14 @@ function toMural(seed: SeedMural): Mural {
     location: seed.location,
     imageSrc: seed.imageSrc,
     imageAlt: seed.imageAlt,
-    gridSize: seed.gridSize,
+    gridCols: seed.gridCols,
+    gridRows: seed.gridRows,
     isAiSample: seed.isAiSample,
     finaleTileId: seed.finaleTileId,
+    organisationSlug: seed.organisationSlug,
+    organisation,
     tiles: buildTiles(seed),
   };
 }
 
-export const SEED_MURALS: Mural[] = SEEDS.map(toMural);
+export const SEED_MURALS: SeedMuralWithOrg[] = SEEDS.map(toMural);

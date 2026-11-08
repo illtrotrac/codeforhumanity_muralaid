@@ -54,7 +54,6 @@ export function NeedForm({ tile, onSave }: NeedFormProps) {
       title: data.get("title"),
       detail: data.get("detail"),
       amount: data.get("amount"),
-      postedBy: data.get("postedBy"),
     });
     if (!result.ok) return showErrors(result.errors);
 
@@ -110,36 +109,26 @@ export function NeedForm({ tile, onSave }: NeedFormProps) {
         <FieldError name="detail" errors={errors} />
       </div>
 
-      <div className="grid gap-6 sm:grid-cols-[minmax(0,10rem)_minmax(0,1fr)]">
-        <div className="flex flex-col gap-2">
-          <label htmlFor="need-amount" className="font-mono text-label uppercase text-ink-muted">
-            Amount
-          </label>
-          <div className="relative">
-            <span aria-hidden="true" className="pointer-events-none absolute inset-y-0 left-4 flex items-center text-ink-muted">
-              $
-            </span>
-            <input
-              {...fieldProps("amount")}
-              type="number"
-              inputMode="numeric"
-              min={AMOUNT_MIN}
-              max={AMOUNT_MAX}
-              step={1}
-              defaultValue={tile.need.amount}
-              className="field pl-8 tabular-nums"
-            />
-          </div>
-          <FieldError name="amount" errors={errors} />
+      <div className="flex max-w-[10rem] flex-col gap-2">
+        <label htmlFor="need-amount" className="font-mono text-label uppercase text-ink-muted">
+          Amount
+        </label>
+        <div className="relative">
+          <span aria-hidden="true" className="pointer-events-none absolute inset-y-0 left-4 flex items-center text-ink-muted">
+            $
+          </span>
+          <input
+            {...fieldProps("amount")}
+            type="number"
+            inputMode="numeric"
+            min={AMOUNT_MIN}
+            max={AMOUNT_MAX}
+            step={1}
+            defaultValue={tile.need.amount}
+            className="field pl-8 tabular-nums"
+          />
         </div>
-
-        <div className="flex flex-col gap-2">
-          <label htmlFor="need-postedBy" className="font-mono text-label uppercase text-ink-muted">
-            Requested by
-          </label>
-          <input {...fieldProps("postedBy")} type="text" defaultValue={tile.need.postedBy} className="field" />
-          <FieldError name="postedBy" errors={errors} />
-        </div>
+        <FieldError name="amount" errors={errors} />
       </div>
 
       {!isFunded && (
