@@ -311,6 +311,16 @@ body {
     box-shadow: var(--shadow-lift);
   }
 
+  /* Big numbers in stats. IM Fell's old-style figures make "0" look like
+     "o", so statistics use Lora with lining (full-height), even-width digits. */
+  .stat-number {
+    font-family: var(--font-sans);
+    font-size: 1.9rem;
+    font-weight: 600;
+    line-height: 1.1;
+    font-variant-numeric: lining-nums tabular-nums;
+  }
+
   /* Proof of delivery: a small gold wax-seal tick */
   .delivered-seal {
     display: grid;

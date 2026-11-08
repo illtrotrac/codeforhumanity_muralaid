@@ -28,21 +28,21 @@ export function AdminBoard({ mural: initialMural }: { mural: MuralData }) {
         <dl className="flex flex-wrap gap-x-10 gap-y-3">
           <div>
             <dt className="text-sm text-ink-muted">Sections waiting</dt>
-            <dd className="font-display text-title text-ink-strong tabular-nums">{locked.length}</dd>
+            <dd className="stat-number text-ink-strong">{locked.length}</dd>
           </div>
           <div>
             <dt className="text-sm text-ink-muted">Sections funded</dt>
-            <dd className="font-display text-title text-ink-strong tabular-nums">
+            <dd className="stat-number text-ink-strong">
               {tiles.length - locked.length}
             </dd>
           </div>
           <div>
             <dt className="text-sm text-ink-muted">Awaiting delivery</dt>
-            <dd className="font-display text-title text-ink-strong tabular-nums">{awaitingDelivery}</dd>
+            <dd className="stat-number text-ink-strong">{awaitingDelivery}</dd>
           </div>
           <div>
             <dt className="text-sm text-ink-muted">Still needed</dt>
-            <dd className="font-display text-title text-accent tabular-nums">
+            <dd className="stat-number text-accent">
               ${stillNeeded.toLocaleString("en-US")}
             </dd>
           </div>

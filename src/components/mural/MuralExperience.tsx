@@ -116,7 +116,7 @@ export function MuralExperience({
         <div className="flex flex-col gap-2">
           <div className="flex flex-wrap items-baseline justify-between gap-x-6 gap-y-1">
             <p>
-              <span className="font-display text-title text-ink-strong tabular-nums">
+              <span className="stat-number text-ink-strong">
                 {restored}
               </span>{" "}
               <span className="text-ink-muted">of {total} sections coloured in</span>

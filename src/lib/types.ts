@@ -32,6 +32,15 @@ export type MuralTile = {
   delivery: Delivery | null; // set once the organisation marks it delivered
 };
 
+// An organisation with its track record, for the partners page.
+export type Partner = Organisation & {
+  raised: number; // dollars from real pledges (seeded demo sections don't count)
+  pledgeCount: number;
+  fundedCount: number; // sections coloured in
+  deliveredCount: number; // sections with proof of delivery
+  pages: MuralSummary[];
+};
+
 // One donor note, as shown on the community notes page.
 export type CommunityNote = {
   id: number;

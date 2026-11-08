@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { notFound } from "next/navigation";
 import { connection } from "next/server";
 import { Suspense } from "react";
@@ -59,7 +60,12 @@ async function MuralLoader({
       </p>
       <h1 className="font-display text-display text-ink-strong text-balance">{mural.title}</h1>
       <div className="flex flex-wrap items-center gap-3">
-        <p className="text-lg text-ink">With {mural.organisation.name}</p>
+        <p className="text-lg text-ink">
+          With{" "}
+          <Link href={`/partners#${mural.organisation.slug}`} className="underline-offset-4 hover:underline">
+            {mural.organisation.name}
+          </Link>
+        </p>
         {mural.organisation.isVerified && <VerifiedBadge />}
       </div>
       <p className="max-w-[52ch] text-lg text-ink-muted">

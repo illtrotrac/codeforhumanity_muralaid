@@ -6,6 +6,7 @@ import type {
   MuralTile,
   Need,
   Organisation,
+  Partner,
   PledgeActivity,
 } from "@/lib/types";
 import { lineArtFor } from "@/lib/line-art";
@@ -194,6 +195,52 @@ export function recentPledges(slug: string, limit = 5): PledgeActivity[] {
     amount: r.amount,
     at: toIsoUtc(r.created_at),
     donorName: r.donor_name,
+  }));
+}
+
+// Every organisation with its totals and colouring pages. Each total is a
+// small subquery per organisation: easy to read, and fast at this size.
+export function listPartners(): Partner[] {
+  const rows = getDb()
+    .prepare(
+      `SELECT o.slug, o.name, o.sector, o.tagline, o.is_verified,
+              (SELECT COALESCE(SUM(p.amount), 0) FROM pledges p
+                 JOIN murals m ON m.id = p.mural_id WHERE m.organisation_id = o.id) AS raised,
+              (SELECT COUNT(*) FROM pledges p
+                 JOIN murals m ON m.id = p.mural_id WHERE m.organisation_id = o.id) AS pledge_count,
+              (SELECT COUNT(*) FROM tiles t
+                 JOIN murals m ON m.id = t.mural_id
+                WHERE m.organisation_id = o.id AND t.status = 'restored') AS funded_count,
+              (SELECT COUNT(*) FROM tiles t
+                 JOIN murals m ON m.id = t.mural_id
+                WHERE m.organisation_id = o.id AND t.delivered_at IS NOT NULL) AS delivered_count
+         FROM organisations o
+        ORDER BY o.name`,
+    )
+    .all() as Array<{
+    slug: string;
+    name: string;
+    sector: string;
+    tagline: string;
+    is_verified: number;
+    raised: number;
+    pledge_count: number;
+    funded_count: number;
+    delivered_count: number;
+  }>;
+
+  const pages = listMurals();
+  return rows.map((r) => ({
+    slug: r.slug,
+    name: r.name,
+    sector: r.sector,
+    tagline: r.tagline,
+    isVerified: r.is_verified === 1,
+    raised: r.raised,
+    pledgeCount: r.pledge_count,
+    fundedCount: r.funded_count,
+    deliveredCount: r.delivered_count,
+    pages: pages.filter((p) => p.organisation.slug === r.slug),
   }));
 }
 

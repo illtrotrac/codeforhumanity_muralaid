@@ -7,6 +7,7 @@ import { usePathname } from "next/navigation";
 const LINKS = [
   { href: "/", label: "The colouring book", match: (p: string) => p === "/" || p.startsWith("/murals") },
   { href: "/notes", label: "Community notes", match: (p: string) => p.startsWith("/notes") },
+  { href: "/partners", label: "Partners", match: (p: string) => p.startsWith("/partners") },
   { href: "/admin", label: "Shelter admin", match: (p: string) => p.startsWith("/admin") },
 ];
 
@@ -21,7 +22,7 @@ export function NavLinks() {
 // known) nothing is highlighted, but every link already works.
 export function NavList({ pathname }: { pathname: string | null }) {
   return (
-    <ul className="flex items-center gap-1">
+    <ul className="flex flex-wrap items-center justify-end gap-1">
       {LINKS.map(({ href, label, match }) => {
         const isCurrent = pathname !== null && match(pathname);
         return (
