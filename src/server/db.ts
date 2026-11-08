@@ -123,6 +123,13 @@ const MIGRATIONS = [
   CREATE UNIQUE INDEX pledges_stripe_session ON pledges (stripe_session_id)
     WHERE stripe_session_id IS NOT NULL;
   `,
+
+  /* v7: proof of delivery */ `
+  -- When the organisation hands over what a section paid for, they mark it
+  -- delivered with a short note. Both stay NULL until then.
+  ALTER TABLE tiles ADD COLUMN delivered_at  TEXT; -- ISO time of the first "delivered" mark
+  ALTER TABLE tiles ADD COLUMN delivery_note TEXT CHECK (length(delivery_note) <= 280);
+  `,
 ];
 
 function migrate(db: DatabaseSync) {

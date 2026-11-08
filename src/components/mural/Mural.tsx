@@ -66,7 +66,8 @@ export function Mural({
   function regionLabel(region: Region) {
     const tile = tileById.get(region.id);
     if (!tile) return `Section ${region.id}`;
-    const status = tile.status === "restored" ? "coloured in" : "waiting for support";
+    const status =
+      tile.status === "locked" ? "waiting for support" : tile.delivery ? "coloured in and delivered" : "coloured in";
     return `Section ${region.id}: ${tile.need.title}, $${tile.need.amount}, ${status}`;
   }
 
@@ -142,6 +143,21 @@ export function Mural({
             {/* 3. Pencil lines between regions */}
             <g className="region-outlines" aria-hidden="true">
               {ordered.flatMap((r) => r.paths.map((d, i) => <path key={`${r.id}-${i}`} d={d} />))}
+            </g>
+
+            {/* 3b. A gold seal on every delivered section */}
+            <g aria-hidden="true" className="pointer-events-none">
+              {regions
+                .filter((r) => tileById.get(r.id)?.delivery)
+                .map((r) => {
+                  const [x, y] = r.centre;
+                  return (
+                    <g key={r.id} className="region-seal">
+                      <circle cx={x} cy={y} r={0.17} />
+                      <path d={`M${x - 0.07} ${y}L${x - 0.02} ${y + 0.05}L${x + 0.08} ${y - 0.06}`} />
+                    </g>
+                  );
+                })}
             </g>
 
             {/* 4. The regions you can click */}

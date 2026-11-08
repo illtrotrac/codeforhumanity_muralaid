@@ -69,6 +69,7 @@ function buildTiles(seed: SeedMural): MuralTile[] {
       status: restored.has(id) ? "restored" : "locked",
       need: id === seed.finaleTileId ? seed.finaleNeed : seed.needs[index % seed.needs.length],
       note: null, // seeded "already funded" tiles have no real donor behind them
+      delivery: null,
     };
   });
 }

@@ -4,22 +4,25 @@ import { useState } from "react";
 import { Mural } from "@/components/mural/Mural";
 import { useMuralState } from "@/components/mural/useMuralState";
 import type { Mural as MuralData } from "@/lib/types";
+import { DeliveryForm } from "./DeliveryForm";
 import { NeedForm } from "./NeedForm";
 
-// The shelter's view: pick a tile on the mural, then edit what it asks for.
+// The shelter's view: pick a section, edit what it asks for, and once it's
+// funded, confirm it was delivered.
 export function AdminBoard({ mural: initialMural }: { mural: MuralData }) {
-  const { mural, tiles, saveNeed } = useMuralState(initialMural);
+  const { mural, tiles, saveNeed, markDelivered } = useMuralState(initialMural);
   const [selectedId, setSelectedId] = useState<number>(mural.finaleTileId);
 
   const selectedTile = tiles.find((t) => t.id === selectedId) ?? null;
   const locked = tiles.filter((t) => t.status === "locked");
   const stillNeeded = locked.reduce((sum, t) => sum + t.need.amount, 0);
+  const awaitingDelivery = tiles.filter((t) => t.status === "restored" && !t.delivery).length;
 
   return (
     <div className="flex flex-col gap-10">
       <header className="flex flex-col gap-4">
         <p className="font-mono text-label uppercase text-ink-muted">
-          Shelter admin · demo mode, no sign-in
+          Shelter admin · {mural.organisation.name}
         </p>
         <h1 className="font-display text-title text-ink-strong">{mural.title}</h1>
         <dl className="flex flex-wrap gap-x-10 gap-y-3">
@@ -32,6 +35,10 @@ export function AdminBoard({ mural: initialMural }: { mural: MuralData }) {
             <dd className="font-display text-title text-ink-strong tabular-nums">
               {tiles.length - locked.length}
             </dd>
+          </div>
+          <div>
+            <dt className="text-sm text-ink-muted">Awaiting delivery</dt>
+            <dd className="font-display text-title text-ink-strong tabular-nums">{awaitingDelivery}</dd>
           </div>
           <div>
             <dt className="text-sm text-ink-muted">Still needed</dt>
@@ -54,8 +61,13 @@ export function AdminBoard({ mural: initialMural }: { mural: MuralData }) {
         />
 
         {selectedTile && (
-          // key: switching tiles gives a fresh form with that tile's values.
-          <NeedForm key={selectedTile.id} tile={selectedTile} onSave={saveNeed} />
+          // key: switching sections gives fresh forms with that section's values.
+          <div className="flex flex-col gap-6">
+            <NeedForm key={`need-${selectedTile.id}`} tile={selectedTile} onSave={saveNeed} />
+            {selectedTile.status === "restored" && (
+              <DeliveryForm key={`delivery-${selectedTile.id}`} tile={selectedTile} onSave={markDelivered} />
+            )}
+          </div>
         )}
       </div>
     </div>

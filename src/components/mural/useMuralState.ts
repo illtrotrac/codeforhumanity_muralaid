@@ -121,6 +121,14 @@ export function useMuralState(initial: Mural, live: LiveHandlers = {}) {
     return { ok: true };
   }
 
+  // Returns an error message, or null when saved.
+  async function markDelivered(id: number, note: string): Promise<string | null> {
+    const result = await muralApi.markDelivered(slug, id, note);
+    if (!result.ok) return result.error;
+    setTiles((prev) => replaceTile(prev, result.data.tile));
+    return null;
+  }
+
   async function runDemo(action: DemoAction) {
     setError(null);
     const result = await muralApi.demo(slug, action);
@@ -128,5 +136,5 @@ export function useMuralState(initial: Mural, live: LiveHandlers = {}) {
     else setError(result.error);
   }
 
-  return { mural: initial, tiles, error, isLive, pledge, checkout, saveNeed, runDemo };
+  return { mural: initial, tiles, error, isLive, pledge, checkout, saveNeed, markDelivered, runDemo };
 }

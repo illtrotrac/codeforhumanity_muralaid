@@ -126,6 +126,16 @@
   --story-dive: 650ms; /* the zoom into a mural before the page changes */
   --book-w: min(calc(var(--story-card-w) * 1.45), 92vw); /* scales with the cards */
 
+  /* Delivery seal */
+  --seal-ink: var(--sepia-950);
+
+  /* Community note slips: soft papers, all warm enough to sit on linen */
+  --note-butter: #fdf0c4;
+  --note-blush: #f8dfd4;
+  --note-sage: #e4ead3;
+  --note-paper: var(--paper-50);
+  --note-tape: rgb(233 210 160 / 0.7);
+
   /* The wand */
   --wand-wood: #8a3a1f;
   --wand-shine: rgb(255 220 190 / 0.45);
@@ -172,6 +182,7 @@
   --font-display: var(--font-fell), "Iowan Old Style", Georgia, serif;
   --font-sans: var(--font-lora), Georgia, "Times New Roman", serif;
   --font-mono: var(--font-fell-sc), "Iowan Old Style", Georgia, serif;
+  --font-hand: var(--font-caveat), "Segoe Print", "Bradley Hand", cursive;
 }
 
 /* Static tokens: no runtime switching needed, so plain @theme */
@@ -258,6 +269,75 @@ body {
   .colour-region[aria-pressed="true"] path {
     stroke: var(--region-selected);
     stroke-width: 3.5px;
+  }
+
+  /* Community notes: paper slips taped to the page, in tidy columns */
+  .notes-wall {
+    columns: 3 18rem; /* as many 18rem columns as fit, at most 3 */
+    column-gap: 2rem;
+  }
+  .note-slip {
+    position: relative;
+    break-inside: avoid; /* never split one slip across two columns */
+    margin-bottom: 2rem;
+    padding: 1.5rem 1.4rem 1.2rem;
+    border-radius: 3px;
+    background: var(--slip-colour);
+    box-shadow: var(--shadow-soft);
+    rotate: var(--slip-tilt);
+    transition:
+      rotate var(--duration-base) var(--ease-out-soft),
+      translate var(--duration-base) var(--ease-out-soft),
+      box-shadow var(--duration-base) var(--ease-out-soft);
+  }
+  /* A strip of tape holding each slip down */
+  .note-slip::before {
+    content: "";
+    position: absolute;
+    top: -0.6rem;
+    left: 50%;
+    width: 4.5rem;
+    height: 1.3rem;
+    translate: -50% 0;
+    rotate: calc(var(--slip-tilt) * -2);
+    background: var(--note-tape);
+    box-shadow: 0 1px 2px rgb(70 45 20 / 0.12);
+  }
+  /* Pointing at a slip straightens it and lifts it off the page */
+  .note-slip:hover,
+  .note-slip:focus-within {
+    rotate: 0deg;
+    translate: 0 -4px;
+    box-shadow: var(--shadow-lift);
+  }
+
+  /* Proof of delivery: a small gold wax-seal tick */
+  .delivered-seal {
+    display: grid;
+    place-items: center;
+    width: 2rem;
+    height: 2rem;
+    border-radius: 50%;
+    color: var(--seal-ink);
+    font-weight: 700;
+    background: radial-gradient(circle at 35% 30%, var(--gold-200), var(--gold-400));
+    box-shadow: 0 2px 6px rgb(70 45 20 / 0.3), inset 0 0 0 2px rgb(255 255 255 / 0.35);
+  }
+  /* The same seal, drawn on the colouring page (SVG, in tile units) */
+  .region-seal circle {
+    fill: var(--gold-400);
+    stroke: var(--paper-50);
+    stroke-width: 1.5px;
+    vector-effect: non-scaling-stroke;
+    filter: drop-shadow(0 1px 1px rgb(70 45 20 / 0.4));
+  }
+  .region-seal path {
+    fill: none;
+    stroke: var(--seal-ink);
+    stroke-width: 2px;
+    vector-effect: non-scaling-stroke;
+    stroke-linecap: round;
+    stroke-linejoin: round;
   }
 
   /* Colouring in: crayon strokes sweep across the region, then it fills solid */

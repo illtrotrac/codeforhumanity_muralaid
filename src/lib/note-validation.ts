@@ -21,6 +21,17 @@ function clean(value: unknown): string | null {
 // main way spam gets in.
 const LINK = /(https?:\/\/|www\.|\.(com|net|org|io|ly)\b)/i;
 
+export const DELIVERY_MIN = 3;
+export const DELIVERY_MAX = 280;
+
+// An organisation's delivery update: required, and longer than a donor note.
+export function validateDeliveryNote(input: unknown): { ok: true; note: string } | { ok: false; error: string } {
+  const note = clean(input);
+  if (!note || note.length < DELIVERY_MIN) return { ok: false, error: "Add a short update for donors." };
+  if (note.length > DELIVERY_MAX) return { ok: false, error: `Keep it under ${DELIVERY_MAX} characters.` };
+  return { ok: true, note };
+}
+
 export function validateNote(input: { donorName?: unknown; message?: unknown }): NoteResult {
   const donorName = clean(input.donorName);
   const message = clean(input.message);

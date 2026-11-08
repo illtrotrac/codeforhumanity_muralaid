@@ -16,6 +16,12 @@ export type DonorNote = {
   message: string | null;
 };
 
+// Proof that what a section paid for reached someone.
+export type Delivery = {
+  at: string; // ISO timestamp, UTC
+  note: string; // the organisation's update, e.g. "Coat handed over on Tuesday"
+};
+
 export type MuralTile = {
   id: number; // 1-based, counted left-to-right, top-to-bottom
   row: number; // 0-based
@@ -23,6 +29,20 @@ export type MuralTile = {
   status: TileStatus;
   need: Need;
   note: DonorNote | null; // set once the tile is funded (null before, or for seeded demo tiles)
+  delivery: Delivery | null; // set once the organisation marks it delivered
+};
+
+// One donor note, as shown on the community notes page.
+export type CommunityNote = {
+  id: number;
+  message: string;
+  donorName: string | null; // null = anonymous
+  at: string; // when it was pledged, ISO UTC
+  needTitle: string;
+  muralSlug: string;
+  muralTitle: string;
+  organisationName: string;
+  delivered: boolean;
 };
 
 // The partner behind a mural. Each mural belongs to exactly one.

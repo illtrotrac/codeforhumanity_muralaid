@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import { VerifiedBadge } from "@/components/murals/VerifiedBadge";
 import { MESSAGE_MAX, NAME_MAX, validateNote, type NoteErrors } from "@/lib/note-validation";
-import type { DonorNote, MuralTile, Organisation } from "@/lib/types";
+import type { Delivery, DonorNote, MuralTile, Organisation } from "@/lib/types";
 
 // "stripe": donors pay on Stripe's page. "demo": instant, free pledges.
 export type PaymentMode = "stripe" | "demo";
@@ -91,7 +91,7 @@ export function NeedPanel({
                 onCheckout={onCheckout}
               />
             ) : (
-              <FundedNote note={tile.note} />
+              <FundedNote note={tile.note} delivery={tile.delivery} organisationName={organisation.name} />
             )}
           </div>
         </div>
@@ -222,19 +222,47 @@ function PledgeForm({ tile, paymentMode, canDemoPledge, onPledge, onCheckout }: 
   );
 }
 
-// What a funded region says about who coloured it in.
-function FundedNote({ note }: { note: DonorNote | null }) {
+const deliveryDate = new Intl.DateTimeFormat("en-GB", { day: "numeric", month: "long", timeZone: "UTC" });
+
+type FundedNoteProps = {
+  note: DonorNote | null;
+  delivery: Delivery | null;
+  organisationName: string;
+};
+
+// What a funded section says: who coloured it in, and whether the thing it
+// paid for has reached someone yet.
+function FundedNote({ note, delivery, organisationName }: FundedNoteProps) {
   const who = note?.donorName ?? "A neighbour";
   return (
-    <figure className="flex flex-col gap-3 rounded-panel bg-surface-raised p-5">
-      {note?.message && (
-        <blockquote className="font-display text-xl leading-snug text-ink-strong">
-          &ldquo;{note.message}&rdquo;
-        </blockquote>
+    <div className="flex flex-col gap-3">
+      <figure className="flex flex-col gap-3 rounded-panel bg-surface-raised p-5">
+        {note?.message && (
+          <blockquote className="font-hand text-2xl leading-snug text-ink-strong">
+            &ldquo;{note.message}&rdquo;
+          </blockquote>
+        )}
+        <figcaption className="text-sm text-ink-muted">
+          <span className="text-ink">{who}</span> coloured this section in.
+        </figcaption>
+      </figure>
+
+      {delivery ? (
+        <section aria-label="Delivery update" className="flex gap-3 rounded-panel bg-surface p-5 shadow-soft">
+          <span aria-hidden="true" className="delivered-seal shrink-0">✓</span>
+          <div className="flex flex-col gap-1">
+            <p className="font-mono text-label uppercase text-ink-muted">
+              Delivered · {deliveryDate.format(new Date(delivery.at))}
+            </p>
+            <p className="text-ink">{delivery.note}</p>
+            <p className="text-sm text-ink-muted">— {organisationName}</p>
+          </div>
+        </section>
+      ) : (
+        <p className="text-sm text-ink-muted">
+          {organisationName} will post an update here once it&apos;s delivered.
+        </p>
       )}
-      <figcaption className="text-sm text-ink-muted">
-        <span className="text-ink">{who}</span> coloured this section in.
-      </figcaption>
-    </figure>
+    </div>
   );
 }

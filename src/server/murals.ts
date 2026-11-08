@@ -1,4 +1,5 @@
 import type {
+  CommunityNote,
   DonorNote,
   Mural,
   MuralSummary,
@@ -46,12 +47,15 @@ type TileRow = {
   pledge_id: number | null; // null = nobody has pledged (yet)
   donor_name: string | null;
   message: string | null;
+  delivered_at: string | null;
+  delivery_note: string | null;
 };
 
 // Tiles come with their pledge, if any. LEFT JOIN keeps unfunded tiles too
 // (a plain JOIN would silently drop every tile without a pledge).
 const TILE_SELECT = `
   SELECT t.tile_number, t.status, t.need_title, t.need_detail, t.need_amount,
+         t.delivered_at, t.delivery_note,
          p.id AS pledge_id, p.donor_name, p.message
     FROM tiles t
     LEFT JOIN pledges p ON p.mural_id = t.mural_id AND p.tile_number = t.tile_number`;
@@ -83,6 +87,8 @@ function toTile(row: TileRow, gridCols: number): MuralTile {
     status: row.status,
     need: { title: row.need_title, detail: row.need_detail, amount: row.need_amount },
     note: row.pledge_id === null ? null : { donorName: row.donor_name, message: row.message },
+    delivery:
+      row.delivered_at && row.delivery_note ? { at: row.delivered_at, note: row.delivery_note } : null,
   };
 }
 
@@ -191,11 +197,55 @@ export function recentPledges(slug: string, limit = 5): PledgeActivity[] {
   }));
 }
 
+// Donor notes for the community notes page, newest first. Pass a slug to
+// see one colouring page's notes, or null for all of them.
+export function listCommunityNotes(slug: string | null, limit = 60): CommunityNote[] {
+  const rows = getDb()
+    .prepare(
+      `SELECT p.id, p.message, p.donor_name, p.created_at,
+              t.need_title, t.delivered_at,
+              m.slug, m.title, o.name AS org_name
+         FROM pledges p
+         JOIN tiles t ON t.mural_id = p.mural_id AND t.tile_number = p.tile_number
+         JOIN murals m ON m.id = p.mural_id
+         JOIN organisations o ON o.id = m.organisation_id
+        WHERE p.message IS NOT NULL AND (? IS NULL OR m.slug = ?)
+        ORDER BY p.id DESC
+        LIMIT ?`,
+    )
+    .all(slug, slug, limit) as Array<{
+    id: number;
+    message: string;
+    donor_name: string | null;
+    created_at: string;
+    need_title: string;
+    delivered_at: string | null;
+    slug: string;
+    title: string;
+    org_name: string;
+  }>;
+
+  return rows.map((r) => ({
+    id: r.id,
+    message: r.message,
+    donorName: r.donor_name,
+    at: toIsoUtc(r.created_at),
+    needTitle: r.need_title,
+    muralSlug: r.slug,
+    muralTitle: r.title,
+    organisationName: r.org_name,
+    delivered: r.delivered_at !== null,
+  }));
+}
+
 // ---------- Writes ----------
 
 // Writes return a result object instead of throwing for expected problems,
 // so the API route can turn each one into the right HTTP status.
-type WriteFailure = { ok: false; reason: "not_found" | "already_funded" | "reserved" };
+type WriteFailure = {
+  ok: false;
+  reason: "not_found" | "already_funded" | "reserved" | "not_funded";
+};
 
 export type PledgeResult =
   | { ok: true; tile: MuralTile; completed: boolean; pledge: PledgeActivity }
@@ -376,6 +426,31 @@ export function updateNeed(slug: string, tileNumber: number, need: Need): Update
     const tile = findTile(mural.id, tileNumber);
     if (!tile) return { ok: false, reason: "not_found" };
     if (changes === 0) return { ok: false, reason: "already_funded" };
+    return { ok: true, tile: toTile(tile, mural.grid_cols) };
+  });
+}
+
+export type DeliveryResult = { ok: true; tile: MuralTile } | WriteFailure;
+
+// Mark a funded section as delivered, or update its note. The first
+// "delivered" time is kept (COALESCE), so editing the note later doesn't
+// pretend it was delivered later.
+export function markDelivered(slug: string, tileNumber: number, note: string): DeliveryResult {
+  const db = getDb();
+  return transaction(db, () => {
+    const mural = findMural(slug);
+    if (!mural) return { ok: false, reason: "not_found" };
+
+    const { changes } = db
+      .prepare(
+        `UPDATE tiles SET delivered_at = COALESCE(delivered_at, ?), delivery_note = ?
+          WHERE mural_id = ? AND tile_number = ? AND status = 'restored'`,
+      )
+      .run(new Date().toISOString(), note, mural.id, tileNumber);
+
+    const tile = findTile(mural.id, tileNumber);
+    if (!tile) return { ok: false, reason: "not_found" };
+    if (changes === 0) return { ok: false, reason: "not_funded" }; // can't deliver what isn't paid for
     return { ok: true, tile: toTile(tile, mural.grid_cols) };
   });
 }

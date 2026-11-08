@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useState, type ReactNode } from "react";
 import { MuralMagic, TAP_MS } from "@/components/magic/MuralMagic";
 import { playChime } from "@/lib/chime";
@@ -175,6 +176,12 @@ export function MuralExperience({
         )}
 
         <KindnessTicker pledges={pledges} />
+        <Link
+          href={`/notes?page=${mural.slug}`}
+          className="self-start font-mono text-label uppercase text-accent underline-offset-4 hover:underline"
+        >
+          Read the notes left on this page →
+        </Link>
 
         {paymentNotice && (
           <p role="status" className="rounded-panel bg-surface-raised p-4 text-sm text-ink">

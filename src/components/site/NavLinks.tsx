@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation";
 // match: which URLs count as "inside" this section, for highlighting.
 const LINKS = [
   { href: "/", label: "The colouring book", match: (p: string) => p === "/" || p.startsWith("/murals") },
+  { href: "/notes", label: "Community notes", match: (p: string) => p.startsWith("/notes") },
   { href: "/admin", label: "Shelter admin", match: (p: string) => p.startsWith("/admin") },
 ];
 

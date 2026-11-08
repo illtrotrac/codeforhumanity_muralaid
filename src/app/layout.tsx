@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { IM_Fell_English, IM_Fell_English_SC, Lora } from "next/font/google";
+import { Caveat, IM_Fell_English, IM_Fell_English_SC, Lora } from "next/font/google";
 import { SiteHeader } from "@/components/site/SiteHeader";
 import "./globals.css";
 
@@ -27,6 +27,12 @@ const lora = Lora({
   subsets: ["latin"],
 });
 
+// Donor notes: Caveat, a relaxed handwriting face, so notes feel written.
+const caveat = Caveat({
+  variable: "--font-caveat",
+  subsets: ["latin"],
+});
+
 export const metadata: Metadata = {
   // Pages set just their own name ("Sign in"); the template adds the site name.
   title: { default: "Colour for Community", template: "%s · Colour for Community" },
@@ -38,7 +44,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html
       lang="en"
-      className={`${fell.variable} ${fellSmallCaps.variable} ${lora.variable} h-full antialiased`}
+      className={`${fell.variable} ${fellSmallCaps.variable} ${lora.variable} ${caveat.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col font-sans">
         <SiteHeader />

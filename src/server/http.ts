@@ -10,10 +10,10 @@ import { muralOrganisationSlug } from "./murals";
 //   404 = no such mural
 export async function requireManager(slug: string): Promise<Response | null> {
   const organisationSlug = muralOrganisationSlug(slug);
-  if (!organisationSlug) return jsonError("That mural doesn't exist.", 404);
+  if (!organisationSlug) return jsonError("That colouring page doesn't exist.", 404);
   const admin = await getCurrentAdmin();
-  if (!admin) return jsonError("Sign in to manage murals.", 401);
-  if (!canManage(admin, organisationSlug)) return jsonError("You can't manage this mural.", 403);
+  if (!admin) return jsonError("Sign in to manage colouring pages.", 401);
+  if (!canManage(admin, organisationSlug)) return jsonError("You can't manage this colouring page.", 403);
   return null;
 }
 

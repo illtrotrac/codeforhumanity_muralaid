@@ -46,6 +46,13 @@ export const muralApi = {
       body: JSON.stringify(note),
     }),
 
+  markDelivered: (slug: string, tileId: number, note: string) =>
+    request<{ tile: MuralTile }>(`${base(slug)}/tiles/${tileId}/delivery`, {
+      method: "POST",
+      headers: json,
+      body: JSON.stringify({ note }),
+    }),
+
   saveNeed: (slug: string, tileId: number, need: Need) =>
     request<{ tile: MuralTile }>(`${base(slug)}/tiles/${tileId}`, {
       method: "PATCH",
