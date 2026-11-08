@@ -8,7 +8,7 @@ import { getMural, recentPledges } from "@/server/murals";
 // /murals/the-long-table, /murals/the-urban-harvest, ...
 export default function MuralPage({ params }: PageProps<"/murals/[slug]">) {
   return (
-    <main className="mx-auto w-full max-w-6xl flex-1 px-6 py-16 lg:py-24">
+    <main className="page-rise mx-auto w-full max-w-6xl flex-1 px-6 py-16 lg:py-24">
       <Suspense fallback={<p className="text-ink-muted">Opening the mural…</p>}>
         <MuralLoader params={params} />
       </Suspense>
