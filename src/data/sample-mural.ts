@@ -25,7 +25,7 @@ const GRID_SIZE = 8;
 // Tiles that already have their colour back, so the demo doesn't start empty.
 const RESTORED_IDS = new Set([1, 2, 8, 13, 15, 20, 23, 29, 31, 34]);
 
-// Build the 36 tiles from the grid size instead of writing them out by hand.
+// Build every tile (gridSize x gridSize) from the grid size instead of writing them out by hand.
 function buildTiles(size: number): MuralTile[] {
   return Array.from({ length: size * size }, (_, index) => ({
     id: index + 1,
