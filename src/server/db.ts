@@ -75,6 +75,28 @@ const MIGRATIONS = [
   -- The requester is now the mural's organisation, not a per-tile field.
   ALTER TABLE tiles DROP COLUMN posted_by;
   `,
+
+  /* v3: admin accounts and login sessions */ `
+  CREATE TABLE admins (
+    id              INTEGER PRIMARY KEY,
+    email           TEXT    NOT NULL UNIQUE COLLATE NOCASE,
+    password_hash   TEXT    NOT NULL, -- "scrypt$<salt>$<hash>", never the password itself
+    role            TEXT    NOT NULL CHECK (role IN ('organisation', 'platform')),
+    -- Organisation admins manage one organisation's murals; platform admins
+    -- (the demo presenter) manage all of them, so theirs is NULL.
+    organisation_id INTEGER REFERENCES organisations(id) ON DELETE CASCADE,
+    created_at      TEXT    NOT NULL DEFAULT (datetime('now')),
+    CHECK ((role = 'platform') = (organisation_id IS NULL))
+  );
+
+  -- We store a hash of each session token, not the token itself, so a
+  -- leaked database can't be used to log in as anyone.
+  CREATE TABLE sessions (
+    token_hash TEXT    PRIMARY KEY,
+    admin_id   INTEGER NOT NULL REFERENCES admins(id) ON DELETE CASCADE,
+    expires_at TEXT    NOT NULL
+  );
+  `,
 ];
 
 function migrate(db: DatabaseSync) {

@@ -1,6 +1,6 @@
 import { validateNeed } from "@/lib/need-validation";
 import { publish } from "@/server/events";
-import { jsonError, parseTileNumber, readJson } from "@/server/http";
+import { jsonError, parseTileNumber, readJson, requireManager } from "@/server/http";
 import { updateNeed } from "@/server/murals";
 
 // PATCH /api/murals/:slug/tiles/:tile - change what a locked tile asks for.
@@ -10,6 +10,9 @@ export async function PATCH(
   ctx: RouteContext<"/api/murals/[slug]/tiles/[tile]">,
 ) {
   const { slug, tile } = await ctx.params;
+  const denied = await requireManager(slug);
+  if (denied) return denied;
+
   const tileNumber = parseTileNumber(tile);
   if (tileNumber === null) return jsonError("Tile must be a positive whole number.", 400);
 

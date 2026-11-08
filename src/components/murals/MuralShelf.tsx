@@ -5,16 +5,17 @@ import { listMurals } from "@/server/murals";
 
 type MuralShelfProps = {
   basePath: "/murals" | "/admin"; // where each card links to
+  organisationSlug?: string | null; // show only this organisation's murals (null/undefined = all)
 };
 
 // A grid of mural cards, read straight from the database. Server
 // Components can call the repository directly; only the browser has to go
 // through the HTTP API.
-//
-// Temporary home page: step 5 replaces this with the storybook.
-export async function MuralShelf({ basePath }: MuralShelfProps) {
+export async function MuralShelf({ basePath, organisationSlug }: MuralShelfProps) {
   await connection(); // live data: render per request, never pre-build
-  const murals = listMurals();
+  const murals = listMurals().filter(
+    (m) => !organisationSlug || m.organisation.slug === organisationSlug,
+  );
 
   return (
     <ul role="list" className="grid gap-8 sm:grid-cols-2 lg:grid-cols-3">

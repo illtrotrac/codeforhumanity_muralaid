@@ -1,8 +1,9 @@
 import type { Metadata } from "next";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { connection } from "next/server";
 import { Suspense } from "react";
 import { AdminBoard } from "@/components/admin/AdminBoard";
+import { canManage, getCurrentAdmin } from "@/server/auth";
 import { getMural } from "@/server/murals";
 
 export const metadata: Metadata = {
@@ -23,7 +24,12 @@ export default function AdminMuralPage({ params }: PageProps<"/admin/[slug]">) {
 async function AdminLoader({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
   await connection();
+  const admin = await getCurrentAdmin();
+  if (!admin) redirect("/admin/login");
+
   const mural = getMural(slug);
-  if (!mural) notFound();
+  // Another organisation's mural looks the same as a missing one, so admins
+  // can't discover what else exists by guessing URLs.
+  if (!mural || !canManage(admin, mural.organisation.slug)) notFound();
   return <AdminBoard mural={mural} />;
 }

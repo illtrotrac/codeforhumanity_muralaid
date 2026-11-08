@@ -14,6 +14,7 @@ const TICKER_LENGTH = 5;
 type MuralExperienceProps = {
   mural: MuralData; // loaded from the database by the page, on the server
   recentPledges: PledgeActivity[]; // newest first
+  canRunDemo: boolean; // show the rehearsal controls (signed-in admins only)
   children: ReactNode; // the static intro, rendered on the server
 };
 
@@ -23,6 +24,7 @@ type MuralExperienceProps = {
 export function MuralExperience({
   mural: initialMural,
   recentPledges,
+  canRunDemo,
   children,
 }: MuralExperienceProps) {
   const [selectedId, setSelectedId] = useState<number | null>(null);
@@ -124,22 +126,24 @@ export function MuralExperience({
           </p>
         )}
 
-        <div className="flex flex-wrap gap-x-6 gap-y-2">
-          <button
-            type="button"
-            onClick={() => handleDemo("skip-to-finale")}
-            className="font-mono text-label uppercase text-ink-muted underline-offset-4 transition-colors duration-300 hover:text-ink hover:underline"
-          >
-            Skip to final tile
-          </button>
-          <button
-            type="button"
-            onClick={() => handleDemo("reset")}
-            className="font-mono text-label uppercase text-ink-muted underline-offset-4 transition-colors duration-300 hover:text-ink hover:underline"
-          >
-            Reset demo
-          </button>
-        </div>
+        {canRunDemo && (
+          <div className="flex flex-wrap gap-x-6 gap-y-2">
+            <button
+              type="button"
+              onClick={() => handleDemo("skip-to-finale")}
+              className="font-mono text-label uppercase text-ink-muted underline-offset-4 transition-colors duration-300 hover:text-ink hover:underline"
+            >
+              Skip to final tile
+            </button>
+            <button
+              type="button"
+              onClick={() => handleDemo("reset")}
+              className="font-mono text-label uppercase text-ink-muted underline-offset-4 transition-colors duration-300 hover:text-ink hover:underline"
+            >
+              Reset demo
+            </button>
+          </div>
+        )}
       </header>
 
       <Mural

@@ -3,6 +3,7 @@ import { connection } from "next/server";
 import { Suspense } from "react";
 import { MuralExperience } from "@/components/mural/MuralExperience";
 import { VerifiedBadge } from "@/components/murals/VerifiedBadge";
+import { canManage, getCurrentAdmin } from "@/server/auth";
 import { getMural, recentPledges } from "@/server/murals";
 
 // /murals/the-long-table, /murals/the-urban-harvest, ...
@@ -22,9 +23,11 @@ async function MuralLoader({ params }: { params: Promise<{ slug: string }> }) {
   await connection();
   const mural = getMural(slug);
   if (!mural) notFound(); // shows Next's 404 page
+  // Demo controls (skip/reset) only show for admins who manage this mural.
+  const canRunDemo = canManage(await getCurrentAdmin(), mural.organisation.slug);
 
   return (
-    <MuralExperience mural={mural} recentPledges={recentPledges(slug)}>
+    <MuralExperience mural={mural} recentPledges={recentPledges(slug)} canRunDemo={canRunDemo}>
       <p className="font-mono text-label uppercase text-ink-muted">
         {mural.organisation.sector} · {mural.location}
       </p>

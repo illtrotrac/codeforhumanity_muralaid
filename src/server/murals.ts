@@ -93,6 +93,11 @@ function findTile(muralId: number, tileNumber: number) {
 
 // ---------- Reads ----------
 
+// Which organisation owns a mural, for permission checks. null if no mural.
+export function muralOrganisationSlug(slug: string): string | null {
+  return findMural(slug)?.org_slug ?? null;
+}
+
 export function listMurals(): MuralSummary[] {
   // One query that counts tiles per mural, instead of loading every tile.
   const rows = getDb()

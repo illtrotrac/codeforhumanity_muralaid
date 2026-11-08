@@ -1,6 +1,15 @@
 import type { DatabaseSync } from "node:sqlite";
+import { hashPasswordSync } from "./passwords";
 import { SEED_MURALS, SEED_ORGANISATIONS, type SeedMuralWithOrg } from "./seed-murals";
 import { transaction } from "./transaction";
+
+// The demo presenter, who can manage every mural.
+export const PRESENTER_EMAIL = "presenter@muralaid.test";
+
+// admin@<organisation-slug>.test (".test" is reserved, so these can never be real addresses)
+export function organisationAdminEmail(organisationSlug: string) {
+  return `admin@${organisationSlug}.test`;
+}
 
 function organisationId(db: DatabaseSync, slug: string): number {
   const row = db.prepare("SELECT id FROM organisations WHERE slug = ?").get(slug) as
@@ -69,7 +78,24 @@ export function seedDatabase(db: DatabaseSync) {
       if (existing.has(mural.slug)) link.run(organisationId(db, mural.organisationSlug), mural.slug);
       else insertMural(db, mural);
     }
+
+    seedAdmins(db);
   });
+}
+
+// Demo accounts, only if a password was provided in .env.local. Existing
+// accounts are left alone (INSERT OR IGNORE), so their passwords don't change.
+function seedAdmins(db: DatabaseSync) {
+  const password = process.env.MURALAID_ADMIN_PASSWORD;
+  if (!password) return;
+
+  const insert = db.prepare(
+    `INSERT OR IGNORE INTO admins (email, password_hash, role, organisation_id) VALUES (?, ?, ?, ?)`,
+  );
+  insert.run(PRESENTER_EMAIL, hashPasswordSync(password), "platform", null);
+  for (const org of SEED_ORGANISATIONS) {
+    insert.run(organisationAdminEmail(org.slug), hashPasswordSync(password), "organisation", organisationId(db, org.slug));
+  }
 }
 
 // Demo helper: put one mural back exactly as it was seeded.
