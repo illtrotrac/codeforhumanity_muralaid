@@ -6,6 +6,7 @@ import type {
   Organisation,
   PledgeActivity,
 } from "@/lib/types";
+import { lineArtFor } from "@/lib/line-art";
 import { getDb } from "./db";
 import { reseedMural } from "./seed";
 import { transaction } from "./transaction";
@@ -27,6 +28,7 @@ type MuralRow = {
   grid_rows: number;
   is_ai_sample: number;
   finale_tile: number;
+  finale_shape: string | null;
   org_slug: string;
   org_name: string;
   org_sector: string;
@@ -140,8 +142,10 @@ export function getMural(slug: string): Mural | null {
     imageAlt: mural.image_alt,
     gridCols: mural.grid_cols,
     gridRows: mural.grid_rows,
+    lineArtSrc: lineArtFor(mural.image_src),
     isAiSample: mural.is_ai_sample === 1,
     finaleTileId: mural.finale_tile,
+    finaleShape: mural.finale_shape ? (JSON.parse(mural.finale_shape) as Mural["finaleShape"]) : null,
     organisation: toOrganisation(mural),
     tiles: tiles.map((row) => toTile(row, mural.grid_cols)),
   };

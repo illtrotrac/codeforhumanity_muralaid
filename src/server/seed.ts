@@ -24,8 +24,8 @@ export function insertMural(db: DatabaseSync, mural: SeedMuralWithOrg) {
   const { lastInsertRowid: muralId } = db
     .prepare(
       `INSERT INTO murals (slug, page_order, title, location, image_src, image_alt,
-                           grid_cols, grid_rows, is_ai_sample, finale_tile, organisation_id)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+                           grid_cols, grid_rows, is_ai_sample, finale_tile, finale_shape, organisation_id)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     )
     .run(
       mural.slug,
@@ -38,6 +38,7 @@ export function insertMural(db: DatabaseSync, mural: SeedMuralWithOrg) {
       mural.gridRows,
       mural.isAiSample ? 1 : 0,
       mural.finaleTileId,
+      mural.finaleShape ? JSON.stringify(mural.finaleShape) : null,
       organisationId(db, mural.organisationSlug),
     );
 
@@ -74,9 +75,17 @@ export function seedDatabase(db: DatabaseSync) {
     const link = db.prepare(
       "UPDATE murals SET organisation_id = ? WHERE slug = ? AND organisation_id IS NULL",
     );
+    // Fill in finale shapes for murals created before they existed.
+    const addShape = db.prepare(
+      "UPDATE murals SET finale_shape = ? WHERE slug = ? AND finale_shape IS NULL",
+    );
     for (const mural of SEED_MURALS) {
-      if (existing.has(mural.slug)) link.run(organisationId(db, mural.organisationSlug), mural.slug);
-      else insertMural(db, mural);
+      if (existing.has(mural.slug)) {
+        link.run(organisationId(db, mural.organisationSlug), mural.slug);
+        if (mural.finaleShape) addShape.run(JSON.stringify(mural.finaleShape), mural.slug);
+      } else {
+        insertMural(db, mural);
+      }
     }
 
     seedAdmins(db);

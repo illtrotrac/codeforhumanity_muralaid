@@ -36,8 +36,12 @@ export type Mural = {
   imageAlt: string;
   gridCols: number; // tiles across
   gridRows: number; // tiles down
+  lineArtSrc: string; // the black-and-white colouring-page version
   isAiSample: boolean;
   finaleTileId: number; // the tile the live demo saves for last
+  // Hand-traced outline of the finale object (the coat, the sun...), as
+  // [x, y] points in tile units. null = the finale is an ordinary region.
+  finaleShape: Array<[number, number]> | null;
   organisation: Organisation;
   tiles: MuralTile[];
 };

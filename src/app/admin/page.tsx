@@ -7,7 +7,7 @@ import { getCurrentAdmin } from "@/server/auth";
 
 // The folder name "admin" makes this page live at /admin.
 export const metadata: Metadata = {
-  title: "Shelter admin · MuralAid",
+  title: "Shelter admin",
 };
 
 export default function AdminIndexPage() {

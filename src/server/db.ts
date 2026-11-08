@@ -97,6 +97,12 @@ const MIGRATIONS = [
     expires_at TEXT    NOT NULL
   );
   `,
+
+  /* v4: the hand-traced finale object on each colouring page */ `
+  -- JSON list of [x, y] points in tile units, e.g. [[5.7,4.6],[6.0,4.6],...].
+  -- NULL means the finale tile is just an ordinary region.
+  ALTER TABLE murals ADD COLUMN finale_shape TEXT;
+  `,
 ];
 
 function migrate(db: DatabaseSync) {

@@ -96,15 +96,12 @@
 
 /* ---------- Layer 3: component tokens ---------- */
 :root {
-  /* Mural tiles */
-  --tile-gap: 4px;
-  --tile-filter-locked: grayscale(1) contrast(0.9) brightness(0.72);
-  --tile-filter-restored: none;
-  --tile-filter-peek: grayscale(0.55) contrast(0.95) brightness(0.88); /* hover hint of colour */
-  --tile-restore-duration: var(--duration-slow);
-  --tile-hover-scale: 1.06;
-  --tile-hover-ring: 0 0 0 2px var(--accent), 0 18px 30px -12px rgb(0 0 0 / 0.7);
-  --tile-selected-ring: 0 0 0 2px var(--ink-strong), 0 0 0 5px var(--accent);
+  /* Colouring page */
+  --page-pencil: rgb(46 42 38 / 0.28); /* the faint lines between regions */
+  --page-pencil-width: 1px;
+  --region-hover: rgb(232 85 61 / 0.22); /* a vermilion wash over the region you point at */
+  --region-selected: var(--accent);
+  --crayon-duration: 1.1s; /* how long colouring in one region takes */
 
   /* Form fields */
   --field-bg: var(--canvas);
@@ -199,37 +196,68 @@ body {
 
 /* ---------- Components that read layer-3 tokens ---------- */
 @layer components {
-  /* data-state is set by Tile.tsx: "locked" (charcoal) or "restored" (colour) */
-  .mural-tile {
-    position: relative;
+  /* The colouring page (Mural.tsx): a sheet of paper on the charcoal desk */
+  .colour-page {
+    width: 100%;
+    max-width: 100%;
+    overflow: hidden;
+    border-radius: var(--radius-panel);
+    background: var(--book-page);
+    box-shadow: var(--shadow-soft), inset 0 0 0 1px rgb(233 185 73 / 0.25);
+    transition: box-shadow var(--duration-slow) var(--ease-out-soft);
+  }
+  /* The ink lines multiply onto the paper, like a printed page */
+  .line-art {
+    mix-blend-mode: multiply;
+  }
+  .region-outlines path {
+    fill: none;
+    stroke: var(--page-pencil);
+    stroke-width: var(--page-pencil-width);
+    vector-effect: non-scaling-stroke; /* 1 screen pixel at any size */
+    stroke-linejoin: round;
+  }
+
+  /* Each clickable region: invisible until you point at it */
+  .colour-region {
     cursor: pointer;
-    filter: var(--tile-filter-locked);
+    outline: none;
+  }
+  .colour-region path {
+    fill: transparent;
+    stroke: transparent;
+    stroke-width: 2.5px;
+    vector-effect: non-scaling-stroke;
+    stroke-linejoin: round;
     transition:
-      filter var(--tile-restore-duration) var(--ease-out-soft),
-      transform var(--duration-base) var(--ease-out-soft),
-      box-shadow var(--duration-base) var(--ease-out-soft);
+      fill var(--duration-base) var(--ease-out-soft),
+      stroke var(--duration-base) var(--ease-out-soft);
   }
-  .mural-tile[data-state="restored"] {
-    filter: var(--tile-filter-restored);
+  .colour-region[data-state="locked"]:hover path,
+  .colour-region:focus-visible path {
+    fill: var(--region-hover);
+    stroke: var(--region-selected);
   }
-  /* Hovering a locked tile lifts it and gives a hint of the colour inside */
-  .mural-tile:hover,
-  .mural-tile:focus-visible {
-    z-index: 1;
-    transform: scale(var(--tile-hover-scale));
-    box-shadow: var(--tile-hover-ring);
+  /* Admin: the region being edited */
+  .colour-region[aria-pressed="true"] path {
+    stroke: var(--region-selected);
+    stroke-width: 3.5px;
   }
-  .mural-tile[data-state="locked"]:hover {
-    filter: var(--tile-filter-peek);
+
+  /* Colouring in: crayon strokes sweep across the region, then it fills solid */
+  .crayon-stroke {
+    fill: none;
+    stroke: white; /* white in a mask = "show the colour here" */
+    stroke-width: 0.22;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    stroke-dasharray: 1;
+    stroke-dashoffset: 1;
+    animation: crayon-draw var(--crayon-duration) var(--ease-out-soft) forwards;
   }
-  /* Admin: the tile being edited */
-  .mural-tile[aria-pressed="true"] {
-    z-index: 2;
-    box-shadow: var(--tile-selected-ring);
-  }
-  /* A one-off glow on the tile someone just funded */
-  .mural-tile[data-just-restored] {
-    animation: tile-bloom 1.2s var(--ease-out-soft);
+  .crayon-fill {
+    opacity: 0;
+    animation: crayon-settle 0.4s ease-out calc(var(--crayon-duration) * 0.8) forwards;
   }
 
   /* Text inputs: no borders, just a hairline ring that warms up on focus */
@@ -620,15 +648,12 @@ body {
 
 /* ---------- Celebration (MuralMagic.tsx sets --magic-tap, --wand-duration, --magic-spill) ---------- */
 @layer components {
-  .mural-grid {
-    transition: box-shadow var(--duration-slow) var(--ease-out-soft);
-  }
-  .mural-grid[data-complete] {
+  .colour-page[data-complete] {
     box-shadow: var(--shadow-soft), var(--complete-glow);
   }
-  /* Each tile flares after the tap, later the further it is from the centre */
-  .mural-grid[data-magic] .mural-tile {
-    animation: tile-shimmer var(--wave-duration) var(--ease-out-soft);
+  /* Each region flares gold after the tap, later the further it is from the centre */
+  .colour-page[data-magic] .colour-region path {
+    animation: region-shimmer var(--wave-duration) var(--ease-out-soft);
     animation-delay: calc(var(--magic-tap) + var(--wave-distance) * var(--wave-step));
   }
 
@@ -677,16 +702,15 @@ body {
   0% { opacity: 1; transform: scale(0.2); }
   100% { opacity: 0; transform: scale(9); }
 }
-@keyframes tile-shimmer {
-  0% { filter: none; }
-  35% { filter: brightness(1.55) saturate(1.3); box-shadow: 0 0 26px 3px var(--magic-glow); }
-  100% { filter: none; }
+@keyframes region-shimmer {
+  0%, 100% { fill: transparent; }
+  35% { fill: var(--magic-glow); }
 }
-
-@keyframes tile-bloom {
-  0% { box-shadow: 0 0 0 0 var(--accent); }
-  40% { box-shadow: 0 0 0 3px var(--accent), 0 0 28px 4px var(--accent); }
-  100% { box-shadow: 0 0 0 0 transparent; }
+@keyframes crayon-draw {
+  to { stroke-dashoffset: 0; }
+}
+@keyframes crayon-settle {
+  to { opacity: 1; }
 }
 
 :focus-visible {

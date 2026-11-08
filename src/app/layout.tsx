@@ -21,7 +21,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "MuralAid",
+  // Pages set just their own name ("Sign in"); the template adds the site name.
+  title: { default: "Colour for Community", template: "%s · Colour for Community" },
   description:
     "Fund a neighbour's need, and watch a community mural come back to colour.",
 };

@@ -7,7 +7,7 @@ import { canManage, getCurrentAdmin } from "@/server/auth";
 import { getMural } from "@/server/murals";
 
 export const metadata: Metadata = {
-  title: "Shelter admin · MuralAid",
+  title: "Shelter admin",
 };
 
 // /admin/the-long-table: edit the needs on one mural.

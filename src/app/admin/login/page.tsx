@@ -5,7 +5,7 @@ import { LoginForm } from "@/components/admin/LoginForm";
 import { getCurrentAdmin } from "@/server/auth";
 
 export const metadata: Metadata = {
-  title: "Sign in · MuralAid",
+  title: "Sign in",
 };
 
 export default function LoginPage() {

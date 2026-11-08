@@ -1,3 +1,4 @@
+import { lineArtFor } from "@/lib/line-art";
 import type { Mural, MuralTile, Need, Organisation } from "@/lib/types";
 
 // The sample data a fresh database starts with: one organisation per
@@ -42,7 +43,15 @@ export const SEED_ORGANISATIONS: Organisation[] = [
   },
 ];
 
-type SeedMural = Omit<Mural, "tiles" | "organisation"> & {
+// A circle as a polygon, for round finale objects like the sun.
+function circle(cx: number, cy: number, r: number, points = 16): Array<[number, number]> {
+  return Array.from({ length: points }, (_, i) => {
+    const a = (i / points) * Math.PI * 2;
+    return [+(cx + r * Math.cos(a)).toFixed(3), +(cy + r * Math.sin(a)).toFixed(3)];
+  });
+}
+
+type SeedMural = Omit<Mural, "tiles" | "organisation" | "lineArtSrc"> & {
   organisationSlug: string;
   needs: Need[]; // handed out to tiles in rotation
   finaleNeed: Need; // the need on finaleTileId
@@ -77,6 +86,7 @@ const SEEDS: SeedMural[] = [
     gridRows: 8,
     isAiSample: true,
     finaleTileId: 46, // the red coat
+    finaleShape: [[5.7, 4.6], [6.0, 4.64], [6.32, 4.8], [6.52, 5.24], [6.6, 6.0], [6.52, 6.4], [6.0, 6.44], [5.44, 6.4], [5.24, 5.92], [5.32, 5.16], [5.52, 4.76]],
     restoredIds: [1, 2, 8, 13, 15, 20, 23, 29, 31, 34],
     finaleNeed: { title: "A winter coat", detail: "Your $15 completes a warm coat for a teenager before the first frost.", amount: 15 },
     needs: [
@@ -102,6 +112,7 @@ const SEEDS: SeedMural[] = [
     gridRows: 8,
     isAiSample: true,
     finaleTileId: 37, // the glowing book
+    finaleShape: [[2.7, 4.3], [4.1, 4.0], [5.5, 4.24], [5.6, 5.4], [4.1, 5.64], [2.6, 5.44]],
     restoredIds: [3, 6, 11, 19, 26, 40, 44, 52, 58, 63],
     finaleNeed: { title: "Storybooks for the circle", detail: "Your $20 completes a box of new picture books for the Saturday reading circle.", amount: 20 },
     needs: [
@@ -127,6 +138,7 @@ const SEEDS: SeedMural[] = [
     gridRows: 6,
     isAiSample: true,
     finaleTileId: 10, // the sun
+    finaleShape: circle(3.0, 1.5, 0.42),
     restoredIds: [2, 7, 14, 21, 30, 33],
     finaleNeed: { title: "Grow lights for winter", detail: "Your $25 keeps the greenhouse growing through winter, so the harvest never stops.", amount: 25 },
     needs: [
@@ -151,6 +163,7 @@ const SEEDS: SeedMural[] = [
     gridRows: 6,
     isAiSample: true,
     finaleTileId: 28, // the golden retriever's face
+    finaleShape: [[4.81, 1.43], [5.91, 1.05], [7.01, 1.43], [7.43, 2.4], [7.01, 3.45], [5.91, 3.98], [4.81, 3.53], [4.4, 2.48]],
     restoredIds: [3, 9, 15, 20, 34, 41, 50, 57, 63],
     finaleNeed: { title: "Biscuit's adoption kit", detail: "Your $20 completes the kit so Biscuit, our golden retriever, can go home this weekend.", amount: 20 },
     needs: [
@@ -176,6 +189,7 @@ const SEEDS: SeedMural[] = [
     gridRows: 6,
     isAiSample: true,
     finaleTileId: 19, // the open storybook
+    finaleShape: [[6.74, 1.17], [7.29, 1.08], [7.84, 1.17], [7.89, 1.62], [7.29, 1.68], [6.68, 1.59]],
     restoredIds: [2, 7, 12, 25, 31, 38, 46, 53, 60, 65],
     finaleNeed: { title: "Bedtime stories for every room", detail: "Your $20 completes a shelf of storybooks so every child has one by their bed.", amount: 20 },
     needs: [
@@ -205,8 +219,10 @@ function toMural(seed: SeedMural): SeedMuralWithOrg {
     imageAlt: seed.imageAlt,
     gridCols: seed.gridCols,
     gridRows: seed.gridRows,
+    lineArtSrc: lineArtFor(seed.imageSrc),
     isAiSample: seed.isAiSample,
     finaleTileId: seed.finaleTileId,
+    finaleShape: seed.finaleShape,
     organisationSlug: seed.organisationSlug,
     organisation,
     tiles: buildTiles(seed),
